@@ -1,188 +1,234 @@
 import React, { useEffect, useState } from "react";
 import { socket } from "./socket";
-import RTTGraph from "./components/RTTGraph";
 import "./App.css";
 
 export default function App() {
 
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  // ---------------- USER STATE ----------------
   const [name, setName] = useState("");
-
-  const [waiting, setWaiting] = useState(false);
   const [joined, setJoined] = useState(false);
   const [isHost, setIsHost] = useState(false);
+  const [waiting, setWaiting] = useState(false);
 
-  const [users, setUsers] = useState([]);
+  // ---------------- CHAT STATE ----------------
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
 
-  const [rtt, setRtt] = useState(0);
-  const [rttHistory, setRttHistory] = useState([]);
+  // ---------------- HOST REQUESTS ----------------
+  const [requests, setRequests] = useState([]);
 
-  const [sent, setSent] = useState(0);
-  const [received, setReceived] = useState(0);
-
+  // ---------------- SOCKET ID ----------------
   const [myId, setMyId] = useState("");
 
-  // 🔷 CONNECTION
+  // =================================================
+  // SOCKET CONNECTION
+  // =================================================
   useEffect(() => {
 
     socket.on("connect", () => {
       setMyId(socket.id.slice(0, 5));
     });
 
-    socket.on("host-assigned", () => {
+    // 👑 FIRST USER = HOST
+    socket.on("you-are-host", () => {
       setIsHost(true);
       setJoined(true);
     });
 
-    socket.on("waiting-room", () => {
-      setWaiting(true);
+    // 📩 JOIN REQUEST (only host receives)
+    socket.on("join-request", (user) => {
+      setRequests((prev) => [...prev, user]);
     });
 
-    socket.on("approved", () => {
+    // ✅ APPROVED BY HOST
+    socket.on("join-approved", () => {
       setWaiting(false);
       setJoined(true);
     });
 
-    socket.on("rejected", () => {
-      alert("Access denied by host");
+    // ❌ REJECTED BY HOST
+    socket.on("join-rejected", (msg) => {
+      setWaiting(false);
+      alert(msg || "Rejected by host");
     });
 
-    socket.on("kicked", () => {
-      alert("You were removed by host");
-      setJoined(false);
-    });
-
-    socket.on("user-list", (list) => {
-      setUsers(list);
-    });
-
+    // 💬 RECEIVE MESSAGE (GLOBAL ROOM)
     socket.on("receive-message", (msg) => {
-      setReceived(p => p + 1);
-
-      setMessages(prev => [
-        ...prev,
-        {
-          text: msg.text,
-          name: msg.name,
-          sender: "other"
-        }
-      ]);
-
-      const rttVal = Math.floor(Math.random() * 300) + 50;
-      setRtt(rttVal);
-      setRttHistory(prev => [...prev.slice(-10), rttVal]);
+      setMessages((prev) => [...prev, msg]);
     });
 
-    return () => socket.disconnect();
+    return () => {
+      socket.off("connect");
+      socket.off("you-are-host");
+      socket.off("join-request");
+      socket.off("join-approved");
+      socket.off("join-rejected");
+      socket.off("receive-message");
+    };
 
   }, []);
 
-  // 🔷 SET NAME
-  useEffect(() => {
-    if (name) socket.emit("set-name", name);
-  }, [name]);
+  // =================================================
+  // JOIN REQUEST
+  // =================================================
+  const handleJoin = () => {
+    if (!name.trim()) return;
 
-  // 🔷 JOIN REQUEST
-  const joinRequest = () => {
+    socket.emit("request-join", name);
     setWaiting(true);
   };
 
-  // 🔷 APPROVE USER (HOST)
-  const approve = (id) => {
+  // =================================================
+  // HOST ACTIONS
+  // =================================================
+  const approveUser = (id) => {
     socket.emit("approve-user", id);
+    setRequests((prev) => prev.filter((u) => u.id !== id));
   };
 
-  // 🔷 REJECT USER (HOST)
-  const reject = (id) => {
+  const rejectUser = (id) => {
     socket.emit("reject-user", id);
+    setRequests((prev) => prev.filter((u) => u.id !== id));
   };
 
-  // 🔷 KICK USER
-  const kick = (id) => {
-    socket.emit("kick-user", id);
-  };
+  // =================================================
+  // SEND MESSAGE
+  // =================================================
+  const sendMessage = () => {
+    if (!input.trim()) return;
 
-  // 🔷 SEND MESSAGE
-  const send = () => {
+    socket.emit("send-message", { text: input });
 
-    if (!input) return;
-
-    setSent(p => p + 1);
-
-    socket.emit("send-message", {
-      text: input
-    });
-
-    setMessages(p => [
-      ...p,
-      { text: input, sender: "me", name }
+    setMessages((prev) => [
+      ...prev,
+      {
+        text: input,
+        name: "You"
+      }
     ]);
 
     setInput("");
   };
 
-  // 🔴 JOIN SCREEN
-  if (!joined) {
+  // =================================================
+  // JOIN SCREEN (NON-HOST USERS)
+  // =================================================
+  if (!joined && !isHost) {
     return (
       <div className="join-container">
+
         <div className="join-card">
 
-          <h2>Group Chat Access</h2>
+          <h2>🔐 Join Chat Room</h2>
+
+          <p className="subtitle">
+            Enter your name to request access
+          </p>
 
           <input
-            placeholder="Enter name"
+            className="join-input"
+            value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
           />
 
-          <button onClick={joinRequest}>
-            Request Join
+          <button className="join-btn" onClick={handleJoin}>
+            Request to Join
           </button>
 
-          {waiting && <p>Waiting for host...</p>}
+          {waiting && (
+            <div className="waiting-box">
+              <div className="spinner"></div>
+              <p>Waiting for host approval...</p>
+            </div>
+          )}
+
         </div>
+
       </div>
     );
   }
 
+  // =================================================
+  // HOST PANEL
+  // =================================================
+  if (isHost) {
+    return (
+      <div className="app" style={{ padding: 20 }}>
+
+        <h2>👑 Host Panel</h2>
+
+        {requests.length === 0 && <p>No pending requests</p>}
+
+        {requests.map((u) => (
+          <div
+            key={u.id}
+            style={{
+              display: "flex",
+              gap: 10,
+              marginBottom: 10,
+              alignItems: "center"
+            }}
+          >
+            <span>{u.name}</span>
+
+            <button onClick={() => approveUser(u.id)}>
+              ✔ Accept
+            </button>
+
+            <button onClick={() => rejectUser(u.id)}>
+              ❌ Reject
+            </button>
+
+          </div>
+        ))}
+
+      </div>
+    );
+  }
+
+  // =================================================
+  // CHAT UI (ALL USERS SHARE SAME ROOM)
+  // =================================================
   return (
     <div className="app">
 
-      {/* CHAT */}
+      {/* CHAT PANEL */}
       <div className="chat-panel">
 
-        <h3>Chat Room {isHost && "👑 HOST"}</h3>
+        <div className="chat-header">
+          💬 Group Chat | 🆔 {myId}
+        </div>
 
         <div className="chat-box">
           {messages.map((m, i) => (
-            <div key={i}>
-              <b>{m.name}</b>: {m.text}
+            <div key={i} className="bubble other">
+
+              <div className="msg-name">
+                {m.name}
+              </div>
+
+              {m.text}
+
             </div>
           ))}
         </div>
 
-        <input value={input} onChange={(e) => setInput(e.target.value)} />
-        <button onClick={send}>Send</button>
+        <div className="input-area">
+
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type message..."
+          />
+
+          <button onClick={sendMessage}>
+            Send
+          </button>
+
+        </div>
 
       </div>
-
-      {/* HOST PANEL */}
-      {isHost && (
-        <div className="dashboard">
-
-          <h3>Host Panel</h3>
-
-          <h4>Users:</h4>
-
-          {users.map(u => (
-            <div key={u.id}>
-              {u.name}
-              <button onClick={() => kick(u.id)}>Kick</button>
-            </div>
-          ))}
-
-        </div>
-      )}
 
     </div>
   );
