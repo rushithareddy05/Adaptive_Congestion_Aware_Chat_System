@@ -157,6 +157,18 @@ button {
   border: none;
 }
 
+.name-bar input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.msg-name {
+  font-size: 11px;
+  color: gray;
+  margin-bottom: 2px;
+}
+
 /* DASHBOARD */
 .dashboard {
   width: 40%;
