@@ -17,29 +17,35 @@ const io = new Server(server, {
 
 const ROOM = "GLOBAL_CHAT";
 
-let hostId = null;              // 👑 ONLY ONE HOST
-let users = {};                // socketId -> name
-let pending = {};              // waiting users
-let approved = new Set();
+let hostId = null;
+let users = {};          // socketId -> name
+let pending = {};        // waiting users
+let approved = new Set(); // allowed users
 
 const MAX_USERS = 10;
 
 // ---------------- CONNECTION ----------------
 io.on("connection", (socket) => {
 
-  console.log("connected:", socket.id);
+  console.log("🔌 Connected:", socket.id);
 
   // 👑 FIRST USER = HOST
   if (!hostId) {
     hostId = socket.id;
-    socket.emit("you-are-host");
-    socket.join(ROOM);
     approved.add(socket.id);
     users[socket.id] = "Host";
+
+    socket.join(ROOM);
+
+    console.log("👑 HOST ASSIGNED:", socket.id);
+
+    socket.emit("you-are-host");
   }
 
   // ---------------- JOIN REQUEST ----------------
   socket.on("request-join", (name) => {
+
+    console.log("📩 Join request:", name);
 
     if (approved.size >= MAX_USERS) {
       socket.emit("join-rejected", "Room Full (10 users max)");
@@ -48,7 +54,7 @@ io.on("connection", (socket) => {
 
     pending[socket.id] = name;
 
-    // send request ONLY TO HOST
+    // send request ONLY to host
     if (hostId) {
       io.to(hostId).emit("join-request", {
         id: socket.id,
@@ -57,22 +63,29 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ---------------- APPROVE USER (ONLY HOST) ----------------
+  // ---------------- APPROVE USER ----------------
   socket.on("approve-user", (userId) => {
 
     if (socket.id !== hostId) return;
 
+    if (!pending[userId]) return;
+
     approved.add(userId);
-    users[userId] = pending[userId] || "User";
+    users[userId] = pending[userId];
 
     delete pending[userId];
 
-    io.to(userId).emit("join-approved");
+    const userSocket = io.sockets.sockets.get(userId);
 
-    io.sockets.sockets.get(userId)?.join(ROOM);
+    if (userSocket) {
+      userSocket.join(ROOM);
+      userSocket.emit("join-approved");
+    }
+
+    console.log("✅ Approved:", userId);
   });
 
-  // ---------------- REJECT USER (ONLY HOST) ----------------
+  // ---------------- REJECT USER ----------------
   socket.on("reject-user", (userId) => {
 
     if (socket.id !== hostId) return;
@@ -80,12 +93,17 @@ io.on("connection", (socket) => {
     delete pending[userId];
 
     io.to(userId).emit("join-rejected", "Rejected by host");
+
+    console.log("❌ Rejected:", userId);
   });
 
   // ---------------- CHAT ----------------
   socket.on("send-message", (data) => {
 
-    if (!approved.has(socket.id)) return;
+    if (!approved.has(socket.id)) {
+      console.log("⛔ Blocked message from unapproved user");
+      return;
+    }
 
     const msg = {
       text: data.text,
@@ -98,19 +116,22 @@ io.on("connection", (socket) => {
   // ---------------- DISCONNECT ----------------
   socket.on("disconnect", () => {
 
+    console.log("❌ Disconnected:", socket.id);
+
     if (socket.id === hostId) {
-      hostId = null; // reset host if leaves
+      hostId = null;
+      console.log("👑 Host left, resetting host");
     }
 
     delete users[socket.id];
     delete pending[socket.id];
     approved.delete(socket.id);
-
-    console.log("disconnected:", socket.id);
   });
 
 });
 
-server.listen(5000, () => {
-  console.log("Server running on 5000");
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log("🚀 Server running on port", PORT);
 });
