@@ -10,7 +10,7 @@ export default function App() {
   const [isHost, setIsHost] = useState(false);
 
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState(""); 
+  const [input, setInput] = useState("");
 
   const [requests, setRequests] = useState([]);
   const [myId, setMyId] = useState("");
@@ -18,38 +18,50 @@ export default function App() {
   // ---------------- SOCKET ----------------
   useEffect(() => {
 
-    socket.on("connect", () => {
+    const onConnect = () => {
       setMyId(socket.id.slice(0, 5));
-    });
+    };
 
-    // 👑 HOST DETECTION
-    socket.on("you-are-host", () => {
+    const onHost = () => {
       setIsHost(true);
       setJoined(true);
       setWaiting(false);
-    });
+    };
 
-    // 📩 JOIN REQUEST (ONLY HOST RECEIVES)
-    socket.on("join-request", (user) => {
+    const onRequest = (user) => {
       setRequests((prev) => [...prev, user]);
-    });
+    };
 
-    // ✅ APPROVED
-    socket.on("join-approved", () => {
+    const onApproved = () => {
       setWaiting(false);
       setJoined(true);
-    });
+    };
 
-    // ❌ REJECTED
-    socket.on("join-rejected", (msg) => {
+    const onRejected = (msg) => {
       setWaiting(false);
       alert(msg);
-    });
+    };
 
-    // 💬 MESSAGES
-    socket.on("receive-message", (msg) => {
+    const onMessage = (msg) => {
       setMessages((prev) => [...prev, msg]);
-    });
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("you-are-host", onHost);
+    socket.on("join-request", onRequest);
+    socket.on("join-approved", onApproved);
+    socket.on("join-rejected", onRejected);
+    socket.on("receive-message", onMessage);
+
+    // 🔥 CLEANUP (IMPORTANT FOR VERCEL)
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("you-are-host", onHost);
+      socket.off("join-request", onRequest);
+      socket.off("join-approved", onApproved);
+      socket.off("join-rejected", onRejected);
+      socket.off("receive-message", onMessage);
+    };
 
   }, []);
 
