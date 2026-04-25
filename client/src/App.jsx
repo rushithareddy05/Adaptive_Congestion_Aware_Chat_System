@@ -8,7 +8,9 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
-  const [name, setName] = useState(""); // 🔥 NEW
+  const [name, setName] = useState("");
+  const [joined, setJoined] = useState(false); // 🔥 waiting room state
+  const [waiting, setWaiting] = useState(false); // 🔥 waiting indicator
 
   const [rttHistory, setRttHistory] = useState([]);
   const [rtt, setRtt] = useState(0);
@@ -22,20 +24,21 @@ export default function App() {
 
   const [myId, setMyId] = useState("");
 
-  // ✅ GET SOCKET ID
+  // GET SOCKET ID
   useEffect(() => {
     socket.on("connect", () => {
       setMyId(socket.id.slice(0, 5));
     });
   }, []);
 
+  // 🔥 SEND NAME TO BACKEND
   useEffect(() => {
-  if (name.trim()) {
-    socket.emit("set-name", name);
-  }
+    if (name.trim()) {
+      socket.emit("set-name", name);
+    }
   }, [name]);
 
-  // 📥 RECEIVE MESSAGE
+  // RECEIVE MESSAGE
   useEffect(() => {
 
     socket.on("receive-message", (msg) => {
@@ -49,11 +52,10 @@ export default function App() {
         {
           text: msg.text,
           sender: "other",
-          name: msg.name || "User" // 🔥 NEW
+          name: msg.name || "User"
         }
       ]);
 
-      // RTT simulation
       const rttVal = Math.floor(Math.random() * 300) + 50;
       setRtt(rttVal);
       setRttHistory(prev => [...prev.slice(-10), rttVal]);
@@ -75,7 +77,7 @@ export default function App() {
 
   }, []);
 
-  // 📤 SEND MESSAGE
+  // SEND MESSAGE
   const sendMessage = () => {
 
     if (!input.trim()) return;
@@ -89,8 +91,7 @@ export default function App() {
     }
 
     socket.emit("send-message", {
-      text: input,
-      name: name || "Anonymous" // 🔥 NEW
+      text: input
     });
 
     setMessages(prev => [
@@ -98,96 +99,124 @@ export default function App() {
       {
         text: input,
         sender: "me",
-        name: name || "You" // 🔥 NEW
+        name: name || "You"
       }
     ]);
 
     setInput("");
   };
 
+  // 🔥 JOIN ROOM (SIMULATED APPROVAL)
+  const handleJoin = () => {
+    if (!name.trim()) return;
+
+    setWaiting(true);
+
+    setTimeout(() => {
+      setWaiting(false);
+      setJoined(true);
+    }, 2000); // simulate host approval
+  };
+
   return (
     <div className="app">
 
-      {/* LEFT CHAT PANEL */}
-      <div className="chat-panel">
+      {/* 🔥 JOIN SCREEN */}
+      {!joined && (
+        <div style={{ padding: 20 }}>
+          <h2>Join Chat Room</h2>
 
-        <div className="chat-header">
-          Adaptive Congestion Aware Chat Room | 🆔 {myId}
-        </div>
-
-        {/* 🔥 NAME INPUT */}
-        <div className="name-bar">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Enter your name"
           />
-        </div>
 
-        <div className="chat-box">
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`bubble ${m.sender === "me" ? "me" : "other"}`}
-            >
-              {/* 🔥 SHOW NAME */}
-              <div className="msg-name">{m.name}</div>
-              {m.text}
-            </div>
-          ))}
-        </div>
+          <br /><br />
 
-        <div className="input-area">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type message..."
-          />
-
-          <button onClick={sendMessage}>
-            Send
+          <button onClick={handleJoin}>
+            Request to Join
           </button>
+
+          {waiting && <p>⏳ Waiting for host approval...</p>}
         </div>
+      )}
 
-      </div>
+      {/* 🔥 MAIN CHAT (only after join) */}
+      {joined && (
+        <>
+          {/* LEFT CHAT PANEL */}
+          <div className="chat-panel">
 
-      {/* RIGHT DASHBOARD */}
-      <div className="dashboard">
+            <div className="chat-header">
+              💬 Chat | 🆔 {myId}
+            </div>
 
-        <h2>📊 Network</h2>
+            <div className="chat-box">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`bubble ${m.sender === "me" ? "me" : "other"}`}
+                >
+                  <div className="msg-name">{m.name}</div>
+                  {m.text}
+                </div>
+              ))}
+            </div>
 
-        <RTTGraph dataPoints={rttHistory} />
+            <div className="input-area">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type message..."
+              />
 
-        <p>RTT: {rtt} ms</p>
+              <button onClick={sendMessage}>
+                Send
+              </button>
+            </div>
 
-        <p>
-          Congestion:
-          <span className={congestion.toLowerCase()}>
-            {" "}{congestion}
-          </span>
-        </p>
-
-        {slowMode && (
-          <div className="slow-alert">
-            ⚠️ Slow Mode
           </div>
-        )}
 
-        <div className="loss-bar">
-          <div
-            className="loss-fill"
-            style={{
-              width: `${(lost / (sent || 1)) * 100}%`
-            }}
-          ></div>
-        </div>
+          {/* RIGHT DASHBOARD */}
+          <div className="dashboard">
 
-        <p>Loss: {lost}/{sent}</p>
+            <h2>📊 Network</h2>
 
-        <p>Sent: {sent}</p>
-        <p>Received: {received}</p>
+            <RTTGraph dataPoints={rttHistory} />
 
-      </div>
+            <p>RTT: {rtt} ms</p>
+
+            <p>
+              Congestion:
+              <span className={congestion.toLowerCase()}>
+                {" "}{congestion}
+              </span>
+            </p>
+
+            {slowMode && (
+              <div className="slow-alert">
+                ⚠️ Slow Mode
+              </div>
+            )}
+
+            <div className="loss-bar">
+              <div
+                className="loss-fill"
+                style={{
+                  width: `${(lost / (sent || 1)) * 100}%`
+                }}
+              ></div>
+            </div>
+
+            <p>Loss: {lost}/{sent}</p>
+
+            <p>Sent: {sent}</p>
+            <p>Received: {received}</p>
+
+          </div>
+        </>
+      )}
 
     </div>
   );
