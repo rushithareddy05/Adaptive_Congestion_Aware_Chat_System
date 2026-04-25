@@ -12,7 +12,7 @@ export default function App() {
   const [joined, setJoined] = useState(false);
   const [waiting, setWaiting] = useState(false);
 
-  const [rttHistory, setRttHistory] = useState([]);
+  const [rttHistory, setRttHistory] = useState([]); 
   const [rtt, setRtt] = useState(0);
 
   const [sent, setSent] = useState(0);
