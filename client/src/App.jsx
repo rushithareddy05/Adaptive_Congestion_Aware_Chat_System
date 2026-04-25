@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { socket } from "./socket";
 import RTTGraph from "./components/RTTGraph";
-import "./App.css";
+import "./App.css"; 
 
 export default function App() {
 
