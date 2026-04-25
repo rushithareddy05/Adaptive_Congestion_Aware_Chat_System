@@ -3,164 +3,123 @@ body {
   font-family: Arial;
 }
 
-.container {
-  display: flex;
-  height: 100vh;
-}
-
-/* CHAT SIDE */
-.chat {
-  width: 65%;
-  display: flex;
-  flex-direction: column;
-  background: #ece5dd;
-}
-
-.header {
-  background: #075e54;
-  color: white;
-  padding: 15px;
-  font-size: 18px;
-}
-
-.chat-box {
-  flex: 1;
-  padding: 10px;
-  overflow-y: auto;
-
-  display: flex;
-  flex-direction: column;
-}
-
-.msg {
-  display: inline-block;
-  max-width: 60%;
-  padding: 10px 14px;
-  margin: 6px;
-  border-radius: 10px;
-  word-wrap: break-word;
-  word-break: break-word;
-  line-height: 1.4;
-}
-
-.me {
-  background: #dcf8c6;
-  margin-left: auto;
-  text-align: left;
-}
-
-.other {
-  background: white;
-  margin-right: auto;
-  text-align: left;
-}
-
-.sender {
-  font-size: 12px;
-  color: gray;
-}
-
-/* INPUT */
-.input-box {
-  display: flex;
-  padding: 10px;
-  background: #f0f0f0;
-}
-
-input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 20px;
-  border: none;
-}
-
-button {
-  margin-left: 10px;
-  padding: 10px 20px;
-  background: #075e54;
-  color: white;
-  border: none;
-  border-radius: 20px;
-}
-
-/* PANEL */
-.panel {
-  width: 35%;
-  background: #111;
-  color: white;
-  padding: 20px;
-}
-
 .app {
   display: flex;
   height: 100vh;
-  font-family: Arial;
 }
 
-/* CHAT */
+/* 🔷 JOIN SCREEN */
+.join-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+.join-card {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.subtitle {
+  font-size: 14px;
+  color: gray;
+  margin-bottom: 15px;
+}
+
+.join-input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.join-btn {
+  width: 100%;
+  padding: 10px;
+  background: #4facfe;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.join-btn:hover {
+  background: #3a8be0;
+}
+
+.waiting-box {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #555;
+}
+
+.spinner {
+  margin: 10px auto;
+  width: 25px;
+  height: 25px;
+  border: 3px solid #ccc;
+  border-top: 3px solid #4facfe;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 🔷 CHAT PANEL */
 .chat-panel {
   width: 60%;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  background: #075e54;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
 }
 
 .chat-box {
-  height: 70%;
+  flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   padding: 10px;
   background: #e5ddd5;
+  margin-top: 10px;
+  border-radius: 10px;
 }
 
-/* WhatsApp bubbles */
+/* 🔷 MESSAGE BUBBLES */
 .bubble {
   max-width: 65%;
   padding: 10px 14px;
   margin: 5px;
   border-radius: 10px;
   font-size: 14px;
-  line-height: 1.4;
 }
 
-/* Your messages (RIGHT) */
 .me {
   background: #dcf8c6;
   align-self: flex-end;
-  border-top-right-radius: 0;
 }
 
-/* Other messages (LEFT) */
 .other {
   background: white;
   align-self: flex-start;
-  border-top-left-radius: 0;
-}
-
-.input-area {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 20px;
-  border: 1px solid #ccc;
-}
-
-button {
-  padding: 10px 15px;
-  border-radius: 20px;
-  background: #25d366;
-  color: white;
-  border: none;
-}
-
-.name-bar input {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 8px;
 }
 
 .msg-name {
@@ -169,7 +128,30 @@ button {
   margin-bottom: 2px;
 }
 
-/* DASHBOARD */
+/* 🔷 INPUT AREA */
+.input-area {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+}
+
+.input-area button {
+  padding: 10px 15px;
+  border-radius: 20px;
+  background: #25d366;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+/* 🔷 DASHBOARD */
 .dashboard {
   width: 40%;
   background: #8e9689;
@@ -182,12 +164,11 @@ button {
   border-radius: 10px;
 }
 
-/* CONGESTION COLORS */
+/* 🔷 NETWORK STATES */
 .low { color: lightgreen; }
 .medium { color: orange; }
 .high { color: red; }
 
-/* 🚨 SLOW MODE ALERT */
 .slow-alert {
   background: red;
   padding: 10px;
@@ -199,7 +180,7 @@ button {
   50% { opacity: 0.3; }
 }
 
-/* 📉 LOSS BAR */
+/* 🔷 LOSS BAR */
 .loss-bar {
   width: 100%;
   height: 10px;
