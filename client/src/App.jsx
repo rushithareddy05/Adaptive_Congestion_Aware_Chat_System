@@ -127,7 +127,7 @@ export default function App() {
 
           <div className="join-card">
 
-            <h2>🔐 Join Chat Room</h2>
+            <h2>🔐 Deploy Test</h2>
 
             <p className="subtitle">
               Enter your name to request access
