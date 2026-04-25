@@ -1,76 +1,223 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const cors = require("cors");
+import React, { useEffect, useState } from "react";
+import { socket } from "./socket";
+import RTTGraph from "./components/RTTGraph";
+import "./App.css";
 
-const app = express();
-app.use(cors());
+export default function App() {
 
-const server = http.createServer(app);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
 
-const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+  const [name, setName] = useState("");
+  const [joined, setJoined] = useState(false); // 🔥 waiting room state
+  const [waiting, setWaiting] = useState(false); // 🔥 waiting indicator
+
+  const [rttHistory, setRttHistory] = useState([]);
+  const [rtt, setRtt] = useState(0);
+
+  const [sent, setSent] = useState(0);
+  const [received, setReceived] = useState(0);
+  const [lost, setLost] = useState(0);
+
+  const [congestion, setCongestion] = useState("LOW");
+  const [slowMode, setSlowMode] = useState(false);
+
+  const [myId, setMyId] = useState("");
+
+  // GET SOCKET ID
+  useEffect(() => {
+    socket.on("connect", () => {
+      setMyId(socket.id.slice(0, 5));
+    });
+  }, []);
+
+  // 🔥 SEND NAME TO BACKEND
+  useEffect(() => {
+    if (name.trim()) {
+      socket.emit("set-name", name);
     }
-});
+  }, [name]);
 
-// users map
-let users = {};
-let userCount = 1;
+  // RECEIVE MESSAGE
+  useEffect(() => {
 
-io.on("connection", (socket) => {
+    socket.on("receive-message", (msg) => {
 
-    // default username
-    const defaultName = "User" + userCount++;
-    users[socket.id] = defaultName;
+      if (!msg || !msg.text) return;
 
-    console.log(defaultName, "connected");
+      setReceived(prev => prev + 1);
 
-    // send initial name
-    socket.emit("your-name", defaultName);
-
-    // 🔥 RECEIVE CUSTOM NAME FROM FRONTEND
-    socket.on("set-name", (name) => {
-        if (name && name.trim()) {
-            users[socket.id] = name.trim();
+      setMessages(prev => [
+        ...prev,
+        {
+          text: msg.text,
+          sender: "other",
+          name: msg.name || "User"
         }
+      ]);
+
+      const rttVal = Math.floor(Math.random() * 300) + 50;
+      setRtt(rttVal);
+      setRttHistory(prev => [...prev.slice(-10), rttVal]);
+
+      if (rttVal < 150) {
+        setCongestion("LOW");
+        setSlowMode(false);
+      } else if (rttVal < 300) {
+        setCongestion("MEDIUM");
+        setSlowMode(false);
+      } else {
+        setCongestion("HIGH");
+        setSlowMode(true);
+      }
+
     });
 
-    // 📤 RECEIVE MESSAGE
-    socket.on("send-message", (data) => {
+    return () => socket.off("receive-message");
 
-        if (!data || !data.text) return;
+  }, []);
 
-        const message = {
-            text: data.text,
-            name: users[socket.id] // 🔥 send name instead of sender
-        };
+  // SEND MESSAGE
+  const sendMessage = () => {
 
-        const delay = Math.random() * 500 + 50;
+    if (!input.trim()) return;
 
-        setTimeout(() => {
+    setSent(prev => prev + 1);
 
-            // send to others
-            socket.broadcast.emit("receive-message", message);
+    if (Math.random() < 0.1) {
+      setLost(prev => prev + 1);
+      setInput("");
+      return;
+    }
 
-            // ACK for RTT
-            socket.emit("ack", {
-                time: Date.now()
-            });
-
-        }, delay);
+    socket.emit("send-message", {
+      text: input
     });
 
-    socket.on("disconnect", () => {
-        console.log(users[socket.id], "disconnected");
-        delete users[socket.id];
-    });
+    setMessages(prev => [
+      ...prev,
+      {
+        text: input,
+        sender: "me",
+        name: name || "You"
+      }
+    ]);
 
-});
+    setInput("");
+  };
 
-const PORT = process.env.PORT || 5000;
+  // 🔥 JOIN ROOM (SIMULATED APPROVAL)
+  const handleJoin = () => {
+    if (!name.trim()) return;
 
-server.listen(PORT, () => {
-    console.log("Server running on port", PORT);
-});
+    setWaiting(true);
+
+    setTimeout(() => {
+      setWaiting(false);
+      setJoined(true);
+    }, 2000); // simulate host approval
+  };
+
+  return (
+    <div className="app">
+
+      {/* 🔥 JOIN SCREEN */}
+      {!joined && (
+        <div style={{ padding: 20 }}>
+          <h2>Join Chat Room</h2>
+
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
+          />
+
+          <br /><br />
+
+          <button onClick={handleJoin}>
+            Request to Join
+          </button>
+
+          {waiting && <p>⏳ Waiting for host approval...</p>}
+        </div>
+      )}
+
+      {/* 🔥 MAIN CHAT (only after join) */}
+      {joined && (
+        <>
+          {/* LEFT CHAT PANEL */}
+          <div className="chat-panel">
+
+            <div className="chat-header">
+              💬 Chat | 🆔 {myId}
+            </div>
+
+            <div className="chat-box">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`bubble ${m.sender === "me" ? "me" : "other"}`}
+                >
+                  <div className="msg-name">{m.name}</div>
+                  {m.text}
+                </div>
+              ))}
+            </div>
+
+            <div className="input-area">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type message..."
+              />
+
+              <button onClick={sendMessage}>
+                Send
+              </button>
+            </div>
+
+          </div>
+
+          {/* RIGHT DASHBOARD */}
+          <div className="dashboard">
+
+            <h2>📊 Network</h2>
+
+            <RTTGraph dataPoints={rttHistory} />
+
+            <p>RTT: {rtt} ms</p>
+
+            <p>
+              Congestion:
+              <span className={congestion.toLowerCase()}>
+                {" "}{congestion}
+              </span>
+            </p>
+
+            {slowMode && (
+              <div className="slow-alert">
+                ⚠️ Slow Mode
+              </div>
+            )}
+
+            <div className="loss-bar">
+              <div
+                className="loss-fill"
+                style={{
+                  width: `${(lost / (sent || 1)) * 100}%`
+                }}
+              ></div>
+            </div>
+
+            <p>Loss: {lost}/{sent}</p>
+
+            <p>Sent: {sent}</p>
+            <p>Received: {received}</p>
+
+          </div>
+        </>
+      )}
+
+    </div>
+  );
+}
