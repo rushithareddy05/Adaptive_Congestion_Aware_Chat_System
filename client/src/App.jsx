@@ -29,6 +29,12 @@ export default function App() {
     });
   }, []);
 
+  useEffect(() => {
+  if (name.trim()) {
+    socket.emit("set-name", name);
+  }
+  }, [name]);
+
   // 📥 RECEIVE MESSAGE
   useEffect(() => {
 
@@ -106,7 +112,7 @@ export default function App() {
       <div className="chat-panel">
 
         <div className="chat-header">
-          💬 Chat | 🆔 {myId}
+          Adaptive Congestion Aware Chat Room | 🆔 {myId}
         </div>
 
         {/* 🔥 NAME INPUT */}
