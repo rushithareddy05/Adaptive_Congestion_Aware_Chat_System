@@ -10,7 +10,7 @@ export default function App() {
   const [isHost, setIsHost] = useState(false);
 
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(""); 
 
   const [requests, setRequests] = useState([]);
   const [myId, setMyId] = useState("");
