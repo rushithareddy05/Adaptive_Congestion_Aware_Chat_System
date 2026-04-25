@@ -15,130 +15,88 @@ const io = new Server(server, {
   }
 });
 
-const MAX_USERS = 10;
-
+// ---------------- STATE ----------------
 let hostId = null;
-let users = {};        // { socketId: { name, role } }
-let waiting = {};      // pending users
-let roomUsers = [];    // active approved users
+let users = {};        // socketId -> name
+let pending = {};      // socketId -> name
+let approved = new Set();
 
-// 🔷 SOCKET CONNECTION
+// ---------------- SOCKET ----------------
 io.on("connection", (socket) => {
-
-  console.log("Connected:", socket.id);
+  console.log("connected:", socket.id);
 
   // 👑 FIRST USER = HOST
   if (!hostId) {
     hostId = socket.id;
-    users[socket.id] = { name: "HOST", role: "host" };
-
-    socket.emit("host-assigned", true);
-  } else {
-    waiting[socket.id] = socket;
-    socket.emit("waiting-room");
-
-    io.to(hostId).emit("new-request", {
-      id: socket.id
-    });
+    socket.emit("you-are-host");
+    console.log("HOST:", socket.id);
   }
 
-  // 🔷 SET NAME
-  socket.on("set-name", (name) => {
-    if (users[socket.id]) {
-      users[socket.id].name = name;
-    } else if (waiting[socket.id]) {
-      waiting[socket.id].name = name;
-    }
-  });
-
-  // 🔷 HOST APPROVE USER
-  socket.on("approve-user", (userId) => {
-
-    if (socket.id !== hostId) return;
-    if (roomUsers.length >= MAX_USERS) return;
-
-    roomUsers.push(userId);
-
-    users[userId] = {
-      name: users[userId]?.name || "User",
-      role: "member"
-    };
-
-    delete waiting[userId];
-
-    io.to(userId).emit("approved");
-
-    io.emit("user-list", roomUsers.map(id => ({
-      id,
-      name: users[id]?.name || "User"
-    })));
-  });
-
-  // 🔴 REJECT USER
-  socket.on("reject-user", (userId) => {
-    if (socket.id !== hostId) return;
-
-    io.to(userId).emit("rejected");
-    delete waiting[userId];
-  });
-
-  // 🔷 SEND MESSAGE
-  socket.on("send-message", (data) => {
-
-    if (!data?.text) return;
-
-    const message = {
-      text: data.text,
-      name: users[socket.id]?.name || "User"
-    };
-
-    roomUsers.forEach(id => {
-      io.to(id).emit("receive-message", message);
-    });
-
-    io.to(hostId).emit("receive-message", message);
-  });
-
-  // 🔷 KICK USER (HOST ONLY)
-  socket.on("kick-user", (userId) => {
-
-    if (socket.id !== hostId) return;
-
-    io.to(userId).emit("kicked");
-
-    roomUsers = roomUsers.filter(id => id !== userId);
-    delete users[userId];
-
-    io.emit("user-list", roomUsers.map(id => ({
-      id,
-      name: users[id]?.name || "User"
-    })));
-  });
-
-  // 🔴 DISCONNECT
-  socket.on("disconnect", () => {
-
-    console.log("Disconnected:", socket.id);
-
-    if (socket.id === hostId) {
-      hostId = null;
-      users = {};
-      waiting = {};
-      roomUsers = [];
+  // ---------------- JOIN REQUEST ----------------
+  socket.on("request-join", (name) => {
+    if (Object.keys(approved).length >= 10) {
+      socket.emit("join-rejected", "Room Full");
       return;
     }
 
-    roomUsers = roomUsers.filter(id => id !== socket.id);
-    delete users[socket.id];
-    delete waiting[socket.id];
+    pending[socket.id] = name;
 
-    io.emit("user-list", roomUsers.map(id => ({
-      id,
-      name: users[id]?.name || "User"
-    })));
+    // send request to host
+    io.to(hostId).emit("join-request", {
+      id: socket.id,
+      name
+    });
+  });
+
+  // ---------------- HOST APPROVE ----------------
+  socket.on("approve-user", (userId) => {
+    if (socket.id !== hostId) return;
+
+    approved.add(userId);
+
+    users[userId] = pending[userId];
+    delete pending[userId];
+
+    io.to(userId).emit("join-approved", users[userId]);
+  });
+
+  // ---------------- HOST REJECT ----------------
+  socket.on("reject-user", (userId) => {
+    if (socket.id !== hostId) return;
+
+    delete pending[userId];
+
+    io.to(userId).emit("join-rejected", "Rejected by host");
+  });
+
+  // ---------------- SET NAME ----------------
+  socket.on("set-name", (name) => {
+    users[socket.id] = name;
+  });
+
+  // ---------------- CHAT ----------------
+  socket.on("send-message", (data) => {
+    if (!approved.has(socket.id) && socket.id !== hostId) return;
+
+    const msg = {
+      text: data.text,
+      name: users[socket.id] || "User"
+    };
+
+    socket.broadcast.emit("receive-message", msg);
+  });
+
+  // ---------------- DISCONNECT ----------------
+  socket.on("disconnect", () => {
+    delete users[socket.id];
+    delete pending[socket.id];
+    approved.delete(socket.id);
+
+    if (socket.id === hostId) {
+      hostId = null; // new host next time
+    }
   });
 });
 
-server.listen(5000, () => {
-  console.log("Server running on 5000");
-});
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log("Server running on", PORT));
