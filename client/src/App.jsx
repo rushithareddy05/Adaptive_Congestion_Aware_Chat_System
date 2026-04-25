@@ -17,7 +17,7 @@ export default function App() {
 
   const [sent, setSent] = useState(0);
   const [received, setReceived] = useState(0);
-  const [lost, setLost] = useState(0);
+  const [lost, setLost] = useState(0); 
 
   const [congestion, setCongestion] = useState("LOW");
   const [slowMode, setSlowMode] = useState(false);
