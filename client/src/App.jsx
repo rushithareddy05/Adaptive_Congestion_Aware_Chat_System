@@ -8,6 +8,8 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
+  const [name, setName] = useState(""); // 🔥 NEW
+
   const [rttHistory, setRttHistory] = useState([]);
   const [rtt, setRtt] = useState(0);
 
@@ -20,19 +22,19 @@ export default function App() {
 
   const [myId, setMyId] = useState("");
 
-  // ✅ GET SOCKET ID PROPERLY
+  // ✅ GET SOCKET ID
   useEffect(() => {
     socket.on("connect", () => {
       setMyId(socket.id.slice(0, 5));
     });
   }, []);
 
-  // 📥 RECEIVE MESSAGE (FIXED)
+  // 📥 RECEIVE MESSAGE
   useEffect(() => {
 
     socket.on("receive-message", (msg) => {
 
-      if (!msg || !msg.text) return; // ❗ prevent empty bubbles
+      if (!msg || !msg.text) return;
 
       setReceived(prev => prev + 1);
 
@@ -40,16 +42,16 @@ export default function App() {
         ...prev,
         {
           text: msg.text,
-          sender: "other"
+          sender: "other",
+          name: msg.name || "User" // 🔥 NEW
         }
       ]);
 
-      // 🔄 simulate RTT
+      // RTT simulation
       const rttVal = Math.floor(Math.random() * 300) + 50;
       setRtt(rttVal);
       setRttHistory(prev => [...prev.slice(-10), rttVal]);
 
-      // 🚦 congestion logic
       if (rttVal < 150) {
         setCongestion("LOW");
         setSlowMode(false);
@@ -67,14 +69,13 @@ export default function App() {
 
   }, []);
 
-  // 📤 SEND MESSAGE (CLEAN)
+  // 📤 SEND MESSAGE
   const sendMessage = () => {
 
     if (!input.trim()) return;
 
     setSent(prev => prev + 1);
 
-    // simulate packet loss (10%)
     if (Math.random() < 0.1) {
       setLost(prev => prev + 1);
       setInput("");
@@ -82,14 +83,16 @@ export default function App() {
     }
 
     socket.emit("send-message", {
-      text: input
+      text: input,
+      name: name || "Anonymous" // 🔥 NEW
     });
 
     setMessages(prev => [
       ...prev,
       {
         text: input,
-        sender: "me"
+        sender: "me",
+        name: name || "You" // 🔥 NEW
       }
     ]);
 
@@ -106,12 +109,23 @@ export default function App() {
           💬 Chat | 🆔 {myId}
         </div>
 
+        {/* 🔥 NAME INPUT */}
+        <div className="name-bar">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
+          />
+        </div>
+
         <div className="chat-box">
           {messages.map((m, i) => (
             <div
               key={i}
               className={`bubble ${m.sender === "me" ? "me" : "other"}`}
             >
+              {/* 🔥 SHOW NAME */}
+              <div className="msg-name">{m.name}</div>
               {m.text}
             </div>
           ))}
@@ -153,7 +167,6 @@ export default function App() {
           </div>
         )}
 
-        {/* LOSS BAR */}
         <div className="loss-bar">
           <div
             className="loss-fill"
