@@ -19,42 +19,91 @@ const io = new Server(server, {
 let users = {};
 let userCount = 1;
 
+// 🔥 NEW: host + control
+let hostSocket = null;
+let pendingUsers = [];
+let approvedUsers = new Set();
+
 io.on("connection", (socket) => {
 
-    // default username
+    // assign default name
     const defaultName = "User" + userCount++;
     users[socket.id] = defaultName;
 
     console.log(defaultName, "connected");
 
-    // send initial name
     socket.emit("your-name", defaultName);
 
-    // 🔥 RECEIVE CUSTOM NAME FROM FRONTEND
+    // 🔥 HOST ASSIGNMENT
+    if (!hostSocket) {
+        hostSocket = socket.id;
+        console.log("Host connected:", defaultName);
+        socket.emit("role", "host");
+    } else {
+        socket.emit("role", "user");
+    }
+
+    // 🔥 SET CUSTOM NAME
     socket.on("set-name", (name) => {
         if (name && name.trim()) {
             users[socket.id] = name.trim();
         }
     });
 
-    // 📤 RECEIVE MESSAGE
+    // 🔥 REQUEST TO JOIN
+    socket.on("request-join", () => {
+        if (socket.id === hostSocket) return;
+
+        pendingUsers.push(socket.id);
+
+        io.to(hostSocket).emit("join-request", {
+            id: socket.id,
+            name: users[socket.id]
+        });
+
+        socket.emit("waiting");
+    });
+
+    // 🔥 APPROVE USER
+    socket.on("approve-user", (id) => {
+        if (socket.id !== hostSocket) return;
+
+        approvedUsers.add(id);
+        pendingUsers = pendingUsers.filter(u => u !== id);
+
+        io.to(id).emit("join-approved");
+    });
+
+    // 🔥 REJECT USER
+    socket.on("reject-user", (id) => {
+        if (socket.id !== hostSocket) return;
+
+        pendingUsers = pendingUsers.filter(u => u !== id);
+
+        io.to(id).emit("join-denied");
+    });
+
+    // 🔥 SEND MESSAGE (ONLY APPROVED USERS)
     socket.on("send-message", (data) => {
 
         if (!data || !data.text) return;
 
+        // ❌ block unapproved users
+        if (socket.id !== hostSocket && !approvedUsers.has(socket.id)) {
+            return;
+        }
+
         const message = {
             text: data.text,
-            name: users[socket.id] // 🔥 send name instead of sender
+            name: users[socket.id]
         };
 
         const delay = Math.random() * 500 + 50;
 
         setTimeout(() => {
 
-            // send to others
             socket.broadcast.emit("receive-message", message);
 
-            // ACK for RTT
             socket.emit("ack", {
                 time: Date.now()
             });
@@ -64,6 +113,15 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
         console.log(users[socket.id], "disconnected");
+
+        // 🔥 if host leaves → reset system
+        if (socket.id === hostSocket) {
+            console.log("Host left. Resetting room...");
+            hostSocket = null;
+            pendingUsers = [];
+            approvedUsers.clear();
+        }
+
         delete users[socket.id];
     });
 
