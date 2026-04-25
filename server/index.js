@@ -1,108 +1,196 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const cors = require("cors");
+import React, { useEffect, useState } from "react";
+import { socket } from "./socket";
+import "./App.css";
 
-const app = express();
-app.use(cors());
+export default function App() {
 
-const server = http.createServer(app);
+  const [name, setName] = useState("");
+  const [joined, setJoined] = useState(false);
+  const [waiting, setWaiting] = useState(false);
+  const [isHost, setIsHost] = useState(false);
 
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
 
-const ROOM = "GLOBAL_CHAT";
+  const [requests, setRequests] = useState([]);
+  const [myId, setMyId] = useState("");
 
-let hostId = null;
-let users = {};
-let pending = {};
-let approvedCount = 0;
-const MAX_USERS = 10;
+  // ---------------- SOCKET ----------------
+  useEffect(() => {
 
-// ---------------- CONNECTION ----------------
-io.on("connection", (socket) => {
+    socket.on("connect", () => {
+      setMyId(socket.id.slice(0, 5));
+    });
 
-  console.log("connected:", socket.id);
+    // 👑 HOST DETECTION
+    socket.on("you-are-host", () => {
+      setIsHost(true);
+      setJoined(true);
+      setWaiting(false);
+    });
 
-  // 👑 FIRST USER = HOST
-  if (!hostId) {
-    hostId = socket.id;
-    socket.emit("you-are-host");
-  }
+    // 📩 JOIN REQUEST (ONLY HOST RECEIVES)
+    socket.on("join-request", (user) => {
+      setRequests((prev) => [...prev, user]);
+    });
+
+    // ✅ APPROVED
+    socket.on("join-approved", () => {
+      setWaiting(false);
+      setJoined(true);
+    });
+
+    // ❌ REJECTED
+    socket.on("join-rejected", (msg) => {
+      setWaiting(false);
+      alert(msg);
+    });
+
+    // 💬 MESSAGES
+    socket.on("receive-message", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+  }, []);
 
   // ---------------- JOIN REQUEST ----------------
-  socket.on("request-join", (name) => {
+  const handleJoin = () => {
+    if (!name.trim()) return;
 
-    if (approvedCount >= MAX_USERS) {
-      socket.emit("join-rejected", "Room Full (10 users max)");
-      return;
-    }
+    socket.emit("request-join", name);
+    setWaiting(true);
+  };
 
-    pending[socket.id] = name;
+  // ---------------- HOST ACTIONS ----------------
+  const approveUser = (id) => {
+    socket.emit("approve-user", id);
+    setRequests((prev) => prev.filter((r) => r.id !== id));
+  };
 
-    io.to(hostId).emit("join-request", {
-      id: socket.id,
-      name
-    });
-  });
+  const rejectUser = (id) => {
+    socket.emit("reject-user", id);
+    setRequests((prev) => prev.filter((r) => r.id !== id));
+  };
 
-  // ---------------- APPROVE ----------------
-  socket.on("approve-user", (userId) => {
-    if (socket.id !== hostId) return;
+  // ---------------- SEND MESSAGE ----------------
+  const sendMessage = () => {
+    if (!input.trim()) return;
 
-    if (approvedCount >= MAX_USERS) return;
+    socket.emit("send-message", { text: input });
 
-    approvedCount++;
+    setMessages((prev) => [
+      ...prev,
+      { text: input, name: "You" }
+    ]);
 
-    users[userId] = pending[userId];
-    delete pending[userId];
+    setInput("");
+  };
 
-    socket.to(userId).emit("join-approved");
+  // ---------------- JOIN SCREEN ----------------
+  if (!joined && !isHost) {
+    return (
+      <div className="join-container">
 
-    // IMPORTANT: force join SAME ROOM
-    io.sockets.sockets.get(userId)?.join(ROOM);
-  });
+        <div className="join-card">
 
-  // ---------------- REJECT ----------------
-  socket.on("reject-user", (userId) => {
-    if (socket.id !== hostId) return;
+          <h2>Join Chat Room</h2>
 
-    delete pending[userId];
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
+          />
 
-    io.to(userId).emit("join-rejected", "Rejected by host");
-  });
+          <button onClick={handleJoin}>
+            Request Join
+          </button>
 
-  // ---------------- MESSAGE ----------------
-  socket.on("send-message", (data) => {
+          {waiting && <p>⏳ Waiting for host approval...</p>}
 
-    if (!users[socket.id] && socket.id !== hostId) return;
+        </div>
 
-    const msg = {
-      text: data.text,
-      name: users[socket.id] || "Host"
-    };
+      </div>
+    );
+  }
 
-    io.to(ROOM).emit("receive-message", msg);
-  });
+  // ---------------- HOST PANEL ----------------
+  if (isHost) {
+    return (
+      <div style={{ padding: 20 }}>
 
-  // ---------------- DISCONNECT ----------------
-  socket.on("disconnect", () => {
+        <h2>👑 You are the HOST</h2>
 
-    delete users[socket.id];
-    delete pending[socket.id];
+        {requests.map((r) => (
+          <div key={r.id} style={{ margin: 10 }}>
+            <b>{r.name}</b>
 
-    if (socket.id === hostId) {
-      hostId = null;
-      approvedCount = 0;
-    }
-  });
+            <button onClick={() => approveUser(r.id)}>
+              Accept
+            </button>
 
-});
+            <button onClick={() => rejectUser(r.id)}>
+              Reject
+            </button>
+          </div>
+        ))}
 
-server.listen(5000, () => {
-  console.log("Server running on 5000");
-});
+        <hr />
+
+        <div className="chat-box">
+          {messages.map((m, i) => (
+            <div key={i} className="bubble">
+              <b>{m.name}:</b> {m.text}
+            </div>
+          ))}
+        </div>
+
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="message..."
+        />
+
+        <button onClick={sendMessage}>
+          Send
+        </button>
+
+      </div>
+    );
+  }
+
+  // ---------------- NORMAL USER CHAT ----------------
+  return (
+    <div className="app">
+
+      <div className="chat-panel">
+
+        <div className="chat-header">
+          💬 Chat | 🆔 {myId}
+        </div>
+
+        <div className="chat-box">
+          {messages.map((m, i) => (
+            <div key={i} className="bubble">
+              <b>{m.name}</b>
+              <div>{m.text}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="input-area">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type message..."
+          />
+
+          <button onClick={sendMessage}>
+            Send
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
