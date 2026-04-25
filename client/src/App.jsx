@@ -1,236 +1,187 @@
 import React, { useEffect, useState } from "react";
 import { socket } from "./socket";
 import RTTGraph from "./components/RTTGraph";
-import "./App.css";  
+import "./App.css";
 
 export default function App() {
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-
   const [name, setName] = useState("");
-  const [joined, setJoined] = useState(false);
-  const [waiting, setWaiting] = useState(false);
 
-  const [rttHistory, setRttHistory] = useState([]); 
+  const [waiting, setWaiting] = useState(false);
+  const [joined, setJoined] = useState(false);
+  const [isHost, setIsHost] = useState(false);
+
+  const [users, setUsers] = useState([]);
+
   const [rtt, setRtt] = useState(0);
+  const [rttHistory, setRttHistory] = useState([]);
 
   const [sent, setSent] = useState(0);
   const [received, setReceived] = useState(0);
-  const [lost, setLost] = useState(0); 
-
-  const [congestion, setCongestion] = useState("LOW");
-  const [slowMode, setSlowMode] = useState(false);
 
   const [myId, setMyId] = useState("");
 
-  // 🔷 GET SOCKET ID
+  // 🔷 CONNECTION
   useEffect(() => {
+
     socket.on("connect", () => {
       setMyId(socket.id.slice(0, 5));
     });
-  }, []);
 
-  // 🔷 SEND NAME TO BACKEND
-  useEffect(() => {
-    if (name.trim()) {
-      socket.emit("set-name", name);
-    }
-  }, [name]);
+    socket.on("host-assigned", () => {
+      setIsHost(true);
+      setJoined(true);
+    });
 
-  // 🔷 RECEIVE MESSAGE
-  useEffect(() => {
+    socket.on("waiting-room", () => {
+      setWaiting(true);
+    });
+
+    socket.on("approved", () => {
+      setWaiting(false);
+      setJoined(true);
+    });
+
+    socket.on("rejected", () => {
+      alert("Access denied by host");
+    });
+
+    socket.on("kicked", () => {
+      alert("You were removed by host");
+      setJoined(false);
+    });
+
+    socket.on("user-list", (list) => {
+      setUsers(list);
+    });
 
     socket.on("receive-message", (msg) => {
-
-      if (!msg || !msg.text) return;
-
-      setReceived(prev => prev + 1);
+      setReceived(p => p + 1);
 
       setMessages(prev => [
         ...prev,
         {
           text: msg.text,
-          sender: "other",
-          name: msg.name || "User"
+          name: msg.name,
+          sender: "other"
         }
       ]);
 
       const rttVal = Math.floor(Math.random() * 300) + 50;
       setRtt(rttVal);
       setRttHistory(prev => [...prev.slice(-10), rttVal]);
-
-      if (rttVal < 150) {
-        setCongestion("LOW");
-        setSlowMode(false);
-      } else if (rttVal < 300) {
-        setCongestion("MEDIUM");
-        setSlowMode(false);
-      } else {
-        setCongestion("HIGH");
-        setSlowMode(true);
-      }
-
     });
 
-    return () => socket.off("receive-message");
+    return () => socket.disconnect();
 
   }, []);
 
+  // 🔷 SET NAME
+  useEffect(() => {
+    if (name) socket.emit("set-name", name);
+  }, [name]);
+
+  // 🔷 JOIN REQUEST
+  const joinRequest = () => {
+    setWaiting(true);
+  };
+
+  // 🔷 APPROVE USER (HOST)
+  const approve = (id) => {
+    socket.emit("approve-user", id);
+  };
+
+  // 🔷 REJECT USER (HOST)
+  const reject = (id) => {
+    socket.emit("reject-user", id);
+  };
+
+  // 🔷 KICK USER
+  const kick = (id) => {
+    socket.emit("kick-user", id);
+  };
+
   // 🔷 SEND MESSAGE
-  const sendMessage = () => {
+  const send = () => {
 
-    if (!input.trim()) return;
+    if (!input) return;
 
-    setSent(prev => prev + 1);
-
-    if (Math.random() < 0.1) {
-      setLost(prev => prev + 1);
-      setInput("");
-      return;
-    }
+    setSent(p => p + 1);
 
     socket.emit("send-message", {
       text: input
     });
 
-    setMessages(prev => [
-      ...prev,
-      {
-        text: input,
-        sender: "me",
-        name: name || "You"
-      }
+    setMessages(p => [
+      ...p,
+      { text: input, sender: "me", name }
     ]);
 
     setInput("");
   };
 
-  // 🔷 JOIN ROOM
-  const handleJoin = () => {
-    if (!name.trim()) return;
+  // 🔴 JOIN SCREEN
+  if (!joined) {
+    return (
+      <div className="join-container">
+        <div className="join-card">
 
-    setWaiting(true);
+          <h2>Group Chat Access</h2>
 
-    setTimeout(() => {
-      setWaiting(false);
-      setJoined(true);
-    }, 2000);
-  };
+          <input
+            placeholder="Enter name"
+            onChange={(e) => setName(e.target.value)}
+          />
+
+          <button onClick={joinRequest}>
+            Request Join
+          </button>
+
+          {waiting && <p>Waiting for host...</p>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
 
-      {/* 🔥 JOIN SCREEN */}
-      {!joined && (
-        <div className="join-container">
+      {/* CHAT */}
+      <div className="chat-panel">
 
-          <div className="join-card">
+        <h3>Chat Room {isHost && "👑 HOST"}</h3>
 
-            <h2>🔐 Deploy Test</h2>
+        <div className="chat-box">
+          {messages.map((m, i) => (
+            <div key={i}>
+              <b>{m.name}</b>: {m.text}
+            </div>
+          ))}
+        </div>
 
-            <p className="subtitle">
-              Enter your name to request access
-            </p>
+        <input value={input} onChange={(e) => setInput(e.target.value)} />
+        <button onClick={send}>Send</button>
 
-            <input
-              className="join-input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-            />
+      </div>
 
-            <button
-              className="join-btn"
-              onClick={handleJoin}
-            >
-              Request to Join
-            </button>
+      {/* HOST PANEL */}
+      {isHost && (
+        <div className="dashboard">
 
-            {waiting && (
-              <div className="waiting-box">
-                <div className="spinner"></div>
-                <p>Waiting for host approval...</p>
-              </div>
-            )}
+          <h3>Host Panel</h3>
 
-          </div>
+          <h4>Users:</h4>
+
+          {users.map(u => (
+            <div key={u.id}>
+              {u.name}
+              <button onClick={() => kick(u.id)}>Kick</button>
+            </div>
+          ))}
 
         </div>
-      )}
-
-      {/* 🔥 MAIN CHAT */}
-      {joined && (
-        <>
-          <div className="chat-panel">
-
-            <div className="chat-header">
-              💬 Chat | 🆔 {myId}
-            </div>
-
-            <div className="chat-box">
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`bubble ${m.sender === "me" ? "me" : "other"}`}
-                >
-                  <div className="msg-name">{m.name}</div>
-                  {m.text}
-                </div>
-              ))}
-            </div>
-
-            <div className="input-area">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type message..."
-              />
-
-              <button onClick={sendMessage}>
-                Send
-              </button>
-            </div>
-
-          </div>
-
-          <div className="dashboard">
-
-            <h2>📊 Network</h2>
-
-            <RTTGraph dataPoints={rttHistory} />
-
-            <p>RTT: {rtt} ms</p>
-
-            <p>
-              Congestion:
-              <span className={congestion.toLowerCase()}>
-                {" "}{congestion}
-              </span>
-            </p>
-
-            {slowMode && (
-              <div className="slow-alert">
-                ⚠️ Slow Mode
-              </div>
-            )}
-
-            <div className="loss-bar">
-              <div
-                className="loss-fill"
-                style={{
-                  width: `${(lost / (sent || 1)) * 100}%`
-                }}
-              ></div>
-            </div>
-
-            <p>Loss: {lost}/{sent}</p>
-
-            <p>Sent: {sent}</p>
-            <p>Received: {received}</p>
-
-          </div>
-        </>
       )}
 
     </div>
