@@ -21,27 +21,32 @@ let userCount = 1;
 
 io.on("connection", (socket) => {
 
-    // ✅ assign username
-    const username = "User" + userCount++;
-    users[socket.id] = username;
+    // default username
+    const defaultName = "User" + userCount++;
+    users[socket.id] = defaultName;
 
-    console.log(username, "connected");
+    console.log(defaultName, "connected");
 
-    // send username to client
-    socket.emit("your-name", username);
+    // send initial name
+    socket.emit("your-name", defaultName);
 
-    // 📤 RECEIVE MESSAGE FROM CLIENT
+    // 🔥 RECEIVE CUSTOM NAME FROM FRONTEND
+    socket.on("set-name", (name) => {
+        if (name && name.trim()) {
+            users[socket.id] = name.trim();
+        }
+    });
+
+    // 📤 RECEIVE MESSAGE
     socket.on("send-message", (data) => {
 
-        // ❗ VALIDATION (prevents empty bubbles)
         if (!data || !data.text) return;
 
         const message = {
-            text: data.text,              // ✅ match frontend
-            sender: users[socket.id]      // User1, User2...
+            text: data.text,
+            name: users[socket.id] // 🔥 send name instead of sender
         };
 
-        // 🔄 simulate network delay (congestion)
         const delay = Math.random() * 500 + 50;
 
         setTimeout(() => {
@@ -49,7 +54,7 @@ io.on("connection", (socket) => {
             // send to others
             socket.broadcast.emit("receive-message", message);
 
-            // send ACK back to sender (for RTT tracking)
+            // ACK for RTT
             socket.emit("ack", {
                 time: Date.now()
             });
