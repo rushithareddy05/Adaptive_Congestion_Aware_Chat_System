@@ -4,7 +4,6 @@ import { Server } from "socket.io";
 import cors from "cors";
 
 const app = express();
-
 app.use(cors({ origin: "*" }));
 
 const server = http.createServer(app);
@@ -13,10 +12,11 @@ const io = new Server(server, {
   cors: { origin: "*" }
 });
 
-// ---------------- ROOMS ----------------
+// ROOMS
 const rooms = {};
+const users = {};
 
-// ---------------- HELPERS ----------------
+// HELPERS
 const generateRoomId = () =>
   Math.random().toString(36).substring(2, 8);
 
@@ -28,7 +28,6 @@ const getCongestion = (rtt) => {
   return "HIGH";
 };
 
-// ---------------- SOCKET ----------------
 io.on("connection", (socket) => {
 
   console.log("Connected:", socket.id);
@@ -50,6 +49,8 @@ io.on("connection", (socket) => {
       requests: []
     };
 
+    users[socket.id] = { name, roomId };
+
     socket.join(roomId);
 
     cb?.({ roomId });
@@ -62,13 +63,15 @@ io.on("connection", (socket) => {
     });
   });
 
-  // JOIN ROOM
+  // JOIN REQUEST
   socket.on("join-room", ({ roomId, name }, cb) => {
 
     const room = rooms[roomId];
     if (!room) return cb?.({ error: "Room not found" });
 
     room.requests.push({ id: socket.id, name });
+
+    users[socket.id] = { name };
 
     io.to(room.host).emit("join-request", {
       id: socket.id,
@@ -96,6 +99,8 @@ io.on("connection", (socket) => {
     if (client) {
       client.join(roomId);
 
+      users[userId].roomId = roomId;
+
       io.to(roomId).emit("system-message", {
         name: "system",
         text: `${user.name} joined 🎉`
@@ -103,8 +108,25 @@ io.on("connection", (socket) => {
     }
   });
 
+  // REJECT USER
+  socket.on("reject-user", ({ userId }) => {
+    const client = io.sockets.sockets.get(userId);
+
+    if (client) {
+      client.emit("system-message", {
+        name: "system",
+        text: "❌ Your join request was rejected"
+      });
+    }
+  });
+
   // MESSAGE
   socket.on("send-message", ({ roomId, text, name }) => {
+
+    const room = rooms[roomId];
+    if (!room) return;
+
+    if (!room.users.find(u => u.id === socket.id)) return;
 
     const rtt = getRTT();
     const congestion = getCongestion(rtt);
@@ -119,6 +141,16 @@ io.on("connection", (socket) => {
 
   // DISCONNECT
   socket.on("disconnect", () => {
+
+    const user = users[socket.id];
+
+    if (user?.roomId && rooms[user.roomId]) {
+      rooms[user.roomId].users =
+        rooms[user.roomId].users.filter(u => u.id !== socket.id);
+    }
+
+    delete users[socket.id];
+
     console.log("Disconnected:", socket.id);
   });
 
