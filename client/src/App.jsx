@@ -4,7 +4,6 @@ import RTTGraph from "./components/RTTGraph";
 import "./App.css";
 
 export default function App() {
-
   const [screen, setScreen] = useState("home");
 
   const [name, setName] = useState("");
@@ -26,7 +25,6 @@ export default function App() {
   const [joinRequests, setJoinRequests] = useState([]);
 
   useEffect(() => {
-
     socket.emit("get-rooms");
 
     socket.on("room-list", setRooms);
@@ -55,7 +53,6 @@ export default function App() {
       socket.off("system-message");
       socket.off("join-request");
     };
-
   }, []);
 
   const createRoom = () => {
@@ -88,7 +85,7 @@ export default function App() {
     socket.emit("send-message", {
       roomId,
       text: input,
-      name
+      name,
     });
 
     setInput("");
@@ -96,64 +93,73 @@ export default function App() {
 
   const approveUser = (userId, roomId) => {
     socket.emit("approve-user", { userId, roomId });
-    setJoinRequests((p) => p.filter(r => r.id !== userId));
+    setJoinRequests((p) => p.filter((r) => r.id !== userId));
   };
 
   const rejectUser = (userId) => {
     socket.emit("reject-user", { userId });
-    setJoinRequests((p) => p.filter(r => r.id !== userId));
+    setJoinRequests((p) => p.filter((r) => r.id !== userId));
   };
 
-  /* HOME */
+  /* ---------------- HOME ---------------- */
   if (screen === "home") {
     return (
       <div className="center">
-        <div className="card">
-
+        <div className="homeCard">
           <h1>💬 Chat System</h1>
+          <p className="subText">Real-time congestion-aware chat</p>
 
           <input
-            placeholder="Enter name"
+            placeholder="Enter your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
-          <button onClick={createRoom}>Create Room</button>
-          <button onClick={() => setScreen("join")}>Join Room</button>
+          <div className="actionBox" onClick={createRoom}>
+            🚀 Create Room
+          </div>
 
+          <div className="actionBox secondary" onClick={() => setScreen("join")}>
+            📡 Join Room
+          </div>
         </div>
       </div>
     );
   }
 
-  /* JOIN */
+  /* ---------------- JOIN ---------------- */
   if (screen === "join") {
     return (
       <div className="center">
-        <div className="card">
+        <div className="homeCard">
+          <h2>Available Rooms</h2>
 
-          <h2>Rooms</h2>
+          {rooms.length === 0 && (
+            <p className="subText">No active rooms</p>
+          )}
 
           {rooms.map((r, i) => (
-            <button key={i} onClick={() => joinRoom(r)}>
-              Join {r}
-            </button>
+            <div key={i} className="roomBox" onClick={() => joinRoom(r)}>
+              🚪 Room {r}
+            </div>
           ))}
 
-          <button onClick={() => setScreen("home")}>Back</button>
-
+          <div
+            className="actionBox secondary"
+            onClick={() => setScreen("home")}
+          >
+            ← Back
+          </div>
         </div>
       </div>
     );
   }
 
-  /* CHAT */
+  /* ---------------- CHAT ---------------- */
   return (
     <div className="layout">
-
       {/* LEFT */}
       <div className="left">
-
         <h3>📊 Network Monitor</h3>
 
         <div className="box">Room: {roomId}</div>
@@ -164,7 +170,6 @@ export default function App() {
         <div className="box">Received: {received}</div>
         <div className="box">Packet Loss: {lost}</div>
 
-        {/* CONGESTION BAR */}
         <div className="bar">
           <div
             className="fill"
@@ -180,7 +185,7 @@ export default function App() {
                   ? "#22c55e"
                   : congestion === "MEDIUM"
                   ? "#facc15"
-                  : "#ef4444"
+                  : "#ef4444",
             }}
           />
         </div>
@@ -195,23 +200,29 @@ export default function App() {
               <div key={i} className="requestCard">
                 <b>{r.name}</b>
                 <div className="reqBtns">
-                  <button onClick={() => approveUser(r.id, r.roomId)} className="approve">✔</button>
-                  <button onClick={() => rejectUser(r.id)} className="reject">✖</button>
+                  <button
+                    onClick={() => approveUser(r.id, r.roomId)}
+                    className="approve"
+                  >
+                    ✔
+                  </button>
+                  <button
+                    onClick={() => rejectUser(r.id)}
+                    className="reject"
+                  >
+                    ✖
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
-
       </div>
 
-      {/* CHAT */}
+      {/* RIGHT */}
       <div className="right">
-
         <div className="chat">
-
           {messages.map((m, i) => {
-
             if (m.name === "system") {
               return (
                 <div key={i} className="system">
@@ -233,12 +244,9 @@ export default function App() {
                 </div>
               </div>
             );
-
           })}
-
         </div>
 
-        {/* INPUT */}
         <div className="input">
           <input
             value={input}
@@ -247,9 +255,7 @@ export default function App() {
           />
           <button onClick={sendMessage}>Send</button>
         </div>
-
       </div>
-
     </div>
   );
 }
