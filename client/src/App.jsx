@@ -74,7 +74,6 @@ export default function App() {
   };
 
   const sendMessage = () => {
-
     if (!input.trim()) return;
 
     setSent((p) => p + 1);
@@ -105,11 +104,11 @@ export default function App() {
     setJoinRequests((p) => p.filter(r => r.id !== userId));
   };
 
+  /* ---------------- HOME ---------------- */
   if (screen === "home") {
     return (
       <div className="center">
         <div className="card">
-
           <h1>💬 Chat System</h1>
 
           <input
@@ -120,12 +119,12 @@ export default function App() {
 
           <button onClick={createRoom}>Create Room</button>
           <button onClick={() => setScreen("join")}>Join Room</button>
-
         </div>
       </div>
     );
   }
 
+  /* ---------------- JOIN ---------------- */
   if (screen === "join") {
     return (
       <div className="center">
@@ -146,10 +145,11 @@ export default function App() {
     );
   }
 
+  /* ---------------- CHAT ---------------- */
   return (
     <div className="layout">
 
-      {/* LEFT */}
+      {/* LEFT DASHBOARD */}
       <div className="left">
 
         <h3>📊 Network Monitor</h3>
@@ -165,13 +165,30 @@ export default function App() {
         <div className="box">Received: {received}</div>
         <div className="box">Packet Loss: {lost}</div>
 
+        {/* CONGESTION BAR */}
         <div className="bar">
-          <div className="fill" />
+          <div
+            className="fill"
+            style={{
+              width:
+                congestion === "LOW"
+                  ? "30%"
+                  : congestion === "MEDIUM"
+                  ? "60%"
+                  : "100%",
+              background:
+                congestion === "LOW"
+                  ? "#22c55e"
+                  : congestion === "MEDIUM"
+                  ? "#facc15"
+                  : "#ef4444"
+            }}
+          />
         </div>
 
         <RTTGraph dataPoints={rttHistory} />
 
-        {/* 👑 ADMIN PANEL */}
+        {/* ADMIN */}
         {joinRequests.length > 0 && (
           <div className="adminBox">
             <h4>👑 Join Requests</h4>
@@ -196,7 +213,7 @@ export default function App() {
 
       </div>
 
-      {/* CHAT */}
+      {/* CHAT AREA */}
       <div className="right">
 
         <div className="chat">
@@ -210,7 +227,7 @@ export default function App() {
             const isMe = m.name === name;
 
             return (
-              <div key={i} className={`msgContainer ${isMe ? "right" : "left"}`}>
+              <div key={i} className={`msgContainer ${isMe ? "me" : "other"}`}>
                 <div className="msgBubble">
                   <div className="msgName">{m.name}</div>
                   <div className="msgText">{m.text}</div>
@@ -222,8 +239,13 @@ export default function App() {
 
         </div>
 
+        {/* INPUT BAR */}
         <div className="input">
-          <input value={input} onChange={(e) => setInput(e.target.value)} />
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type a message..."
+          />
           <button onClick={sendMessage}>Send</button>
         </div>
 
