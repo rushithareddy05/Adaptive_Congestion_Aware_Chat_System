@@ -5,29 +5,87 @@ body {
   color: white;
 }
 
-/* layout */
+/* ---------------- HOME (FIXED REAL UI) ---------------- */
+.center {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card {
+  background: #111827;
+  padding: 32px;
+  border-radius: 18px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+.card h1 {
+  margin: 0;
+  font-size: 22px;
+  text-align: center;
+}
+
+/* INPUT */
+.card input {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background: #0f172a;
+  color: white;
+}
+
+/* PRIMARY BUTTON */
+.card button {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* first button (create) */
+.card button:first-of-type {
+  background: #22c55e;
+}
+
+/* second button (join) */
+.card button:last-of-type {
+  background: #1f2937;
+  color: white;
+}
+
+/* ---------------- MAIN LAYOUT ---------------- */
 .layout {
   display: flex;
   height: 100vh;
 }
 
-/* left */
+/* ---------------- LEFT (MINI DASHBOARD FIXED) ---------------- */
 .left {
-  width: 30%;
+  width: 25%;
   background: #0f172a;
-  padding: 20px;
+  padding: 16px;
+  overflow-y: auto;
+  border-right: 1px solid #1e293b;
 }
 
 .box {
   background: #111827;
-  padding: 12px;
-  margin: 8px 0;
+  padding: 10px;
+  margin: 6px 0;
   border-radius: 10px;
+  font-size: 13px;
 }
 
-/* chat */
+/* ---------------- CHAT ---------------- */
 .right {
-  width: 70%;
+  width: 75%;
   display: flex;
   flex-direction: column;
 }
@@ -38,10 +96,19 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-/* bubbles */
+/* SYSTEM MESSAGE */
+.system {
+  align-self: center;
+  background: #334155;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+/* ---------------- WHATSAPP BUBBLES FIX ---------------- */
 .msgContainer {
   display: flex;
   width: 100%;
@@ -57,39 +124,45 @@ body {
 
 .msgBubble {
   display: inline-block;
-  max-width: 60%;
+  max-width: 65%;
   padding: 10px 14px;
   border-radius: 14px;
   word-break: break-word;
 }
 
+/* others */
 .msgContainer.left .msgBubble {
   background: #1f2937;
   color: white;
   border-bottom-left-radius: 4px;
 }
 
+/* you */
 .msgContainer.right .msgBubble {
   background: #22c55e;
   color: black;
   border-bottom-right-radius: 4px;
 }
 
+/* name */
 .msgName {
   font-size: 11px;
   opacity: 0.7;
+  margin-bottom: 3px;
 }
 
+/* text */
 .msgText {
   font-size: 14px;
 }
 
-/* input */
+/* ---------------- INPUT BAR ---------------- */
 .input {
   display: flex;
   padding: 12px;
   gap: 10px;
   background: #111827;
+  border-top: 1px solid #1e293b;
 }
 
 .input input {
@@ -104,15 +177,17 @@ body {
 .input button {
   background: #22c55e;
   border: none;
-  padding: 12px 18px;
+  padding: 12px 16px;
   border-radius: 20px;
+  cursor: pointer;
 }
 
-/* admin */
+/* ---------------- ADMIN PANEL ---------------- */
 .adminBox {
   background: #111827;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 10px;
 }
 
 .requestCard {
@@ -133,10 +208,12 @@ body {
   background: #22c55e;
   border: none;
   padding: 5px 8px;
+  border-radius: 6px;
 }
 
 .reject {
   background: #ef4444;
   border: none;
   padding: 5px 8px;
+  border-radius: 6px;
 }
