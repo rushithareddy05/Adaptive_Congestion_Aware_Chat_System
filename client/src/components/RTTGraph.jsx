@@ -1,53 +1,23 @@
-import {
-  Chart as ChartJS,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip,
-  Legend
-} from "chart.js";
-
-import { Line } from "react-chartjs-2";
-
-ChartJS.register(
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip,
-  Legend
-);
-
 export default function RTTGraph({ dataPoints = [] }) {
+  return (
+    <div style={{ marginTop: "10px" }}>
+      <div style={{ fontSize: "12px", marginBottom: "5px" }}>
+        RTT Trend
+      </div>
 
-  const data = {
-    labels: dataPoints.map((_, i) => i + 1),
-    datasets: [
-      {
-        label: "RTT (ms)",
-        data: dataPoints,
-        borderColor: "#22c55e",
-        backgroundColor: "rgba(34,197,94,0.2)",
-        fill: true,
-        tension: 0.4,
-        pointRadius: 3
-      }
-    ]
-  };
-
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        labels: { color: "white" }
-      }
-    },
-    scales: {
-      x: { ticks: { color: "white" } },
-      y: { ticks: { color: "white" } }
-    }
-  };
-
-  return <Line data={data} options={options} />;
+      <div style={{ display: "flex", gap: "3px", alignItems: "flex-end" }}>
+        {dataPoints.slice(-15).map((v, i) => (
+          <div
+            key={i}
+            style={{
+              width: "6px",
+              height: `${v / 2}px`,
+              background: "#22c55e",
+              borderRadius: "2px"
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
