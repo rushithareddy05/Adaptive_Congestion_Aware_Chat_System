@@ -1,26 +1,23 @@
 import {
-  Chart as ChartJS,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale
-} from "chart.js";
-import { Line } from "react-chartjs-2";
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 
-ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale);
-
-export default function RTTGraph({ dataPoints }) {
-
-  const data = {
-    labels: dataPoints.map((_, i) => i),
-    datasets: [
-      {
-        label: "RTT (ms)",
-        data: dataPoints,
-        tension: 0.3
-      }
-    ]
-  };
-
-  return <Line data={data} />;
+export default function RTTGraph({ data }) {
+  return (
+    <div style={{ width: "100%", height: 200 }}>
+      <ResponsiveContainer>
+        <LineChart data={data.map((v, i) => ({ name: i, rtt: v }))}>
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Line type="monotone" dataKey="rtt" stroke="#22c55e" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
 }
