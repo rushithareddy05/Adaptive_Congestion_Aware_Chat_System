@@ -24,16 +24,26 @@ export default function App() {
 
   const [joinRequests, setJoinRequests] = useState([]);
 
+  // ---------------- SOCKET SETUP (FIXED) ----------------
   useEffect(() => {
     socket.emit("get-rooms");
 
-    socket.on("room-list", setRooms);
+    const handleRoomList = (data) => setRooms(data);
 
-    socket.on("join-request", (data) => {
-      setJoinRequests((p) => [...p, data]);
-    });
+    const handleJoinRequest = (data) => {
+      setJoinRequests((prev) => {
+        const exists = prev.find((r) => r.id === data.id);
+        if (exists) return prev;
+        return [...prev, data];
+      });
+    };
 
-    socket.on("receive-message", (msg) => {
+    const handleApproved = ({ roomId }) => {
+      setRoomId(roomId);
+      setScreen("chat");
+    };
+
+    const handleMessage = (msg) => {
       setMessages((p) => [...p, msg]);
       setReceived((p) => p + 1);
 
@@ -41,35 +51,44 @@ export default function App() {
       setCongestion(msg.congestion);
 
       setRttHistory((p) => [...p.slice(-20), msg.rtt]);
-    });
+    };
 
-    socket.on("system-message", (msg) => {
+    const handleSystem = (msg) => {
       setMessages((p) => [...p, msg]);
-    });
+    };
+
+    socket.on("room-list", handleRoomList);
+    socket.on("join-request", handleJoinRequest);
+    socket.on("approved", handleApproved);
+    socket.on("receive-message", handleMessage);
+    socket.on("system-message", handleSystem);
 
     return () => {
-      socket.off("room-list");
-      socket.off("receive-message");
-      socket.off("system-message");
-      socket.off("join-request");
+      socket.off("room-list", handleRoomList);
+      socket.off("join-request", handleJoinRequest);
+      socket.off("approved", handleApproved);
+      socket.off("receive-message", handleMessage);
+      socket.off("system-message", handleSystem);
     };
   }, []);
 
+  // ---------------- CREATE ROOM ----------------
   const createRoom = () => {
     socket.emit("create-room", { name }, (res) => {
+      if (!res?.roomId) return;
       setRoomId(res.roomId);
       setScreen("chat");
     });
   };
 
+  // ---------------- JOIN ROOM ----------------
   const joinRoom = (id) => {
     socket.emit("join-room", { roomId: id, name }, (res) => {
-      if (res.error) return alert(res.error);
-      setRoomId(res.roomId);
-      setScreen("chat");
+      if (res?.error) return alert(res.error);
     });
   };
 
+  // ---------------- SEND MESSAGE ----------------
   const sendMessage = () => {
     if (!input.trim()) return;
 
@@ -91,6 +110,7 @@ export default function App() {
     setInput("");
   };
 
+  // ---------------- APPROVE USER ----------------
   const approveUser = (userId, roomId) => {
     socket.emit("approve-user", { userId, roomId });
     setJoinRequests((p) => p.filter((r) => r.id !== userId));
@@ -101,7 +121,7 @@ export default function App() {
     setJoinRequests((p) => p.filter((r) => r.id !== userId));
   };
 
-  /* ---------------- HOME ---------------- */
+  // ---------------- HOME ----------------
   if (screen === "home") {
     return (
       <div className="center">
@@ -140,7 +160,7 @@ export default function App() {
     );
   }
 
-  /* ---------------- JOIN ---------------- */
+  // ---------------- JOIN ----------------
   if (screen === "join") {
     return (
       <div className="center">
@@ -158,10 +178,7 @@ export default function App() {
             </div>
           ))}
 
-          <div
-            className="actionCard back"
-            onClick={() => setScreen("home")}
-          >
+          <div className="actionCard back" onClick={() => setScreen("home")}>
             ← Back
           </div>
 
@@ -170,7 +187,7 @@ export default function App() {
     );
   }
 
-  /* ---------------- CHAT ---------------- */
+  // ---------------- CHAT ----------------
   return (
     <div className="layout">
 
