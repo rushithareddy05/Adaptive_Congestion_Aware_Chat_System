@@ -24,7 +24,6 @@ export default function App() {
   const [received, setReceived] = useState(0);
   const [lost, setLost] = useState(0);
 
-  // SOCKET
   useEffect(() => {
 
     socket.emit("get-rooms");
@@ -53,7 +52,6 @@ export default function App() {
 
   }, []);
 
-  // CREATE ROOM
   const createRoom = () => {
     socket.emit("create-room", { name }, (res) => {
       setRoomId(res.roomId);
@@ -61,7 +59,6 @@ export default function App() {
     });
   };
 
-  // JOIN ROOM
   const joinRoom = (id) => {
     socket.emit("join-room", { roomId: id, name }, (res) => {
       if (res.error) return alert(res.error);
@@ -70,7 +67,6 @@ export default function App() {
     });
   };
 
-  // SEND MESSAGE
   const sendMessage = () => {
 
     if (!input.trim()) return;
@@ -98,7 +94,6 @@ export default function App() {
     return (
       <div className="center">
         <div className="card">
-
           <h1>💬 Chat System</h1>
 
           <input
@@ -112,7 +107,6 @@ export default function App() {
           <button onClick={() => setScreen("join")}>
             Join Room
           </button>
-
         </div>
       </div>
     );
@@ -143,7 +137,7 @@ export default function App() {
     );
   }
 
-  // CHAT UI
+  // CHAT
   return (
     <div className="layout">
 
@@ -205,10 +199,19 @@ export default function App() {
             return (
               <div
                 key={i}
-                className={`msg ${isMe ? "me" : "other"}`}
+                className={`msgContainer ${isMe ? "right" : "left"}`}
               >
-                <div className="msgName">{m.name}</div>
-                <div className="msgText">{m.text}</div>
+                <div className="msgBubble">
+
+                  <div className="msgName">
+                    {m.name}
+                  </div>
+
+                  <div className="msgText">
+                    {m.text}
+                  </div>
+
+                </div>
               </div>
             );
 
