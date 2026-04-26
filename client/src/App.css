@@ -1,194 +1,60 @@
 body {
   margin: 0;
   font-family: Arial;
-}
-
-.app {
-  display: flex;
-  height: 100vh;
-}
-
-/* 🔷 JOIN SCREEN */
-.join-container {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #4facfe, #00f2fe);
-}
-
-.join-card {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  width: 320px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.subtitle {
-  font-size: 14px;
-  color: gray;
-  margin-bottom: 15px;
-}
-
-.join-input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-.join-btn {
-  width: 100%;
-  padding: 10px;
-  background: #4facfe;
+  background: #0f172a;
   color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
 }
 
-.join-btn:hover {
-  background: #3a8be0;
-}
-
-.waiting-box {
-  margin-top: 15px;
-  font-size: 14px;
-  color: #555;
-}
-
-.spinner {
-  margin: 10px auto;
-  width: 25px;
-  height: 25px;
-  border: 3px solid #ccc;
-  border-top: 3px solid #4facfe;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* 🔷 CHAT PANEL */
-.chat-panel {
-  width: 60%;
-  padding: 20px;
+.center {
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
 }
 
-.chat-header {
-  background: #075e54;
-  color: white;
-  padding: 12px;
+input {
+  padding: 10px;
+  width: 250px;
   border-radius: 8px;
+  border: none;
+}
+
+button {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  background: #22c55e;
+  color: white;
+  cursor: pointer;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.header {
+  padding: 10px;
+  background: #1e293b;
 }
 
 .chat-box {
   flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
   padding: 10px;
-  background: #e5ddd5;
-  margin-top: 10px;
-  border-radius: 10px;
+  overflow-y: auto;
+  background: #0b1220;
 }
 
-/* 🔷 MESSAGE BUBBLES */
-.bubble {
-  max-width: 65%;
-  padding: 10px 14px;
-  margin: 5px;
-  border-radius: 10px;
-  font-size: 14px;
+.msg {
+  margin: 5px 0;
 }
 
-.me {
-  background: #dcf8c6;
-  align-self: flex-end;
-}
-
-.other {
-  background: white;
-  align-self: flex-start;
-}
-
-.msg-name {
-  font-size: 11px;
-  color: gray;
-  margin-bottom: 2px;
-}
-
-/* 🔷 INPUT AREA */
 .input-area {
   display: flex;
+  padding: 10px;
   gap: 10px;
-  margin-top: 10px;
-}
-
-.input-area input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 20px;
-  border: 1px solid #ccc;
-}
-
-.input-area button {
-  padding: 10px 15px;
-  border-radius: 20px;
-  background: #25d366;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-/* 🔷 DASHBOARD */
-.dashboard {
-  width: 40%;
-  background: #8e9689;
-  color: white;
-  padding: 20px;
-}
-
-.dashboard canvas {
-  background: white;
-  border-radius: 10px;
-}
-
-/* 🔷 NETWORK STATES */
-.low { color: lightgreen; }
-.medium { color: orange; }
-.high { color: red; }
-
-.slow-alert {
-  background: red;
-  padding: 10px;
-  margin: 10px 0;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  50% { opacity: 0.3; }
-}
-
-/* 🔷 LOSS BAR */
-.loss-bar {
-  width: 100%;
-  height: 10px;
-  background: #333;
-  margin: 10px 0;
-}
-
-.loss-fill {
-  height: 100%;
-  background: red;
+  background: #1e293b;
 }
