@@ -15,6 +15,7 @@ export default function App() {
 
   const [rttHistory, setRttHistory] = useState([]);
   const [rtt, setRtt] = useState(0);
+  const [waiting, setWaiting] = useState(false);
 
   const [congestion, setCongestion] = useState("LOW");
   const [slowMode, setSlowMode] = useState(false);
@@ -40,6 +41,7 @@ export default function App() {
     };
 
     const handleApproved = ({ roomId }) => {
+      setWaiting(false); // ✅ STOP WAITING
       setRoomId(roomId);
       setScreen("chat");
     };
@@ -52,7 +54,6 @@ export default function App() {
       setCongestion(msg.congestion);
       setRttHistory((p) => [...p.slice(-20), msg.rtt]);
 
-      // ---------------- SLOW MODE ----------------
       if (msg.rtt > 200) {
         setSlowMode(true);
 
@@ -94,8 +95,13 @@ export default function App() {
 
   // ---------------- JOIN ROOM ----------------
   const joinRoom = (id) => {
+    setWaiting(true); // ✅ SHOW WAITING
+
     socket.emit("join-room", { roomId: id, name }, (res) => {
-      if (res?.error) return alert(res.error);
+      if (res?.error) {
+        setWaiting(false);
+        return alert(res.error);
+      }
     });
   };
 
@@ -186,6 +192,12 @@ export default function App() {
             </div>
           ))}
 
+          {waiting && (
+            <div className="subText" style={{ color: "#facc15" }}>
+              ⏳ Waiting for host approval...
+            </div>
+          )}
+
           <div className="actionCard back" onClick={() => setScreen("home")}>
             ← Back
           </div>
@@ -249,26 +261,14 @@ export default function App() {
 
       <div className="right">
         <div className="chat">
-          {messages.map((m, i) => {
-            if (m.name === "system") {
-              return (
-                <div key={i} className="system">
-                  {m.text}
-                </div>
-              );
-            }
-
-            const isMe = m.name === name;
-
-            return (
-              <div key={i} className={`msgContainer ${isMe ? "me" : "other"}`}>
-                <div className="msgBubble">
-                  <div className="msgName">{m.name}</div>
-                  <div className="msgText">{m.text}</div>
-                </div>
+          {messages.map((m, i) => (
+            <div key={i} className={`msgContainer ${m.name === name ? "me" : "other"}`}>
+              <div className="msgBubble">
+                <div className="msgName">{m.name}</div>
+                <div className="msgText">{m.text}</div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         <div className="input">
