@@ -1,60 +1,146 @@
 body {
   margin: 0;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: #0f172a;
   color: white;
 }
 
+/* ---------------- CENTER SCREENS ---------------- */
 .center {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   justify-content: center;
   align-items: center;
 }
 
-input {
+.center input {
   padding: 10px;
-  width: 250px;
+  width: 260px;
   border-radius: 8px;
   border: none;
+  outline: none;
 }
 
-button {
-  padding: 10px 15px;
+.center button {
+  padding: 10px 14px;
   border-radius: 8px;
   border: none;
   background: #22c55e;
   color: white;
   cursor: pointer;
+  min-width: 150px;
 }
 
+/* ---------------- CHAT LAYOUT ---------------- */
 .chat-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
 
+/* HEADER */
 .header {
-  padding: 10px;
+  padding: 12px;
   background: #1e293b;
+  font-weight: bold;
 }
 
+/* RTT + CONGESTION STATUS */
+.status {
+  padding: 6px 12px;
+  font-size: 13px;
+  background: #111827;
+  color: #cbd5e1;
+}
+
+/* CHAT BOX */
 .chat-box {
   flex: 1;
   padding: 10px;
   overflow-y: auto;
   background: #0b1220;
+  display: flex;
+  flex-direction: column;
 }
 
-.msg {
-  margin: 5px 0;
+/* ---------------- MESSAGE WRAPPER ---------------- */
+.msg-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin: 8px;
+  max-width: 65%;
 }
 
+/* LEFT (OTHERS) */
+.msg-wrapper.left {
+  align-self: flex-start;
+  text-align: left;
+}
+
+/* RIGHT (YOU) */
+.msg-wrapper.right {
+  align-self: flex-end;
+  text-align: right;
+}
+
+/* MESSAGE NAME */
+.msg-name {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 3px;
+}
+
+/* MESSAGE BUBBLE */
+.msg-bubble {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #334155;
+  word-wrap: break-word;
+  font-size: 14px;
+}
+
+/* YOUR MESSAGE COLOR */
+.msg-wrapper.right .msg-bubble {
+  background: #22c55e;
+  color: black;
+}
+
+/* ---------------- INPUT AREA ---------------- */
 .input-area {
   display: flex;
-  padding: 10px;
   gap: 10px;
+  padding: 10px;
   background: #1e293b;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 20px;
+  border: none;
+  outline: none;
+}
+
+.input-area button {
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: none;
+  background: #22c55e;
+  color: black;
+  cursor: pointer;
+}
+
+/* ---------------- OPTIONAL STATUS COLORS ---------------- */
+.low {
+  color: #4ade80;
+}
+
+.medium {
+  color: #facc15;
+}
+
+.high {
+  color: #ef4444;
 }
