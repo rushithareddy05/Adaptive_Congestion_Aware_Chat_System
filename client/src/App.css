@@ -196,3 +196,41 @@ body {
   cursor: pointer;
   font-weight: bold;
 }
+
+/* ============================= */
+/* WHATSAPP ALIGNMENT FIX PATCH */
+/* ============================= */
+
+/* ensures full left/right separation like WhatsApp */
+.msgContainer {
+  width: 100%;
+}
+
+/* RIGHT SIDE (YOU) */
+.msgContainer.right {
+  align-self: flex-end;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* LEFT SIDE (OTHERS) */
+.msgContainer.left {
+  align-self: flex-start;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* make bubble shrink properly like WhatsApp */
+.msgBubble {
+  max-width: 100%;
+  display: inline-block;
+}
+
+/* stronger differentiation for clarity */
+.msgContainer.right .msgBubble {
+  border-bottom-right-radius: 4px;
+}
+
+.msgContainer.left .msgBubble {
+  border-bottom-left-radius: 4px;
+}
