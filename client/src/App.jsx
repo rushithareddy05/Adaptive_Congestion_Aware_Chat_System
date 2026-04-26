@@ -24,7 +24,7 @@ export default function App() {
   const [received, setReceived] = useState(0);
   const [lost, setLost] = useState(0);
 
-  // ---------------- SOCKET ----------------
+  // SOCKET
   useEffect(() => {
 
     socket.emit("get-rooms");
@@ -37,10 +37,10 @@ export default function App() {
 
       setReceived((p) => p + 1);
 
-      setRtt(msg.rtt);
-      setCongestion(msg.congestion);
+      setRtt(msg.rtt || 0);
+      setCongestion(msg.congestion || "LOW");
 
-      setRttHistory((p) => [...p.slice(-15), msg.rtt]);
+      setRttHistory((p) => [...p.slice(-20), msg.rtt || 0]);
 
     });
 
@@ -56,7 +56,7 @@ export default function App() {
 
   }, []);
 
-  // ---------------- CREATE ROOM ----------------
+  // CREATE ROOM
   const createRoom = () => {
     socket.emit("create-room", { name }, (res) => {
       setRoomId(res.roomId);
@@ -64,7 +64,7 @@ export default function App() {
     });
   };
 
-  // ---------------- JOIN ROOM ----------------
+  // JOIN ROOM
   const joinRoom = (id) => {
     socket.emit("join-room", { roomId: id, name }, (res) => {
       if (res.error) return alert(res.error);
@@ -73,14 +73,14 @@ export default function App() {
     });
   };
 
-  // ---------------- SEND MESSAGE ----------------
+  // SEND MESSAGE
   const sendMessage = () => {
 
     if (!input.trim()) return;
 
     setSent((p) => p + 1);
 
-    const lostPacket = Math.random() < 0.1;
+    const lostPacket = Math.random() < 0.08;
     if (lostPacket) {
       setLost((p) => p + 1);
       setInput("");
@@ -96,14 +96,12 @@ export default function App() {
     setInput("");
   };
 
-  // ---------------- HOME ----------------
+  // HOME
   if (screen === "home") {
     return (
       <div className="center">
-
         <div className="card">
-
-          <h1>💬 Chat System</h1>
+          <h1>💬 Adaptive Chat System</h1>
 
           <input
             placeholder="Enter name"
@@ -111,27 +109,18 @@ export default function App() {
             onChange={(e) => setName(e.target.value)}
           />
 
-          <button onClick={createRoom}>
-            Create Room
-          </button>
-
-          <button onClick={() => setScreen("join")}>
-            Join Room
-          </button>
-
+          <button onClick={createRoom}>Create Room</button>
+          <button onClick={() => setScreen("join")}>Join Room</button>
         </div>
-
       </div>
     );
   }
 
-  // ---------------- JOIN ----------------
+  // JOIN
   if (screen === "join") {
     return (
       <div className="center">
-
         <div className="card">
-
           <h2>Available Rooms</h2>
 
           {rooms.length === 0 && <p>No rooms available</p>}
@@ -142,28 +131,23 @@ export default function App() {
             </button>
           ))}
 
-          <button onClick={() => setScreen("home")}>
-            Back
-          </button>
-
+          <button onClick={() => setScreen("home")}>Back</button>
         </div>
-
       </div>
     );
   }
 
-  // ---------------- CHAT LAYOUT ----------------
+  // CHAT UI
   return (
     <div className="layout">
 
-      {/* LEFT PANEL */}
+      {/* LEFT DASHBOARD */}
       <div className="left">
 
-        <h2>📊 Network Monitor</h2>
+        <h2>📊 Network Dashboard</h2>
 
         <div className="box">Room: {roomId}</div>
         <div className="box">RTT: {rtt} ms</div>
-
         <div className={`box ${congestion.toLowerCase()}`}>
           Congestion: {congestion}
         </div>
@@ -172,14 +156,13 @@ export default function App() {
         <div className="box">Received: {received}</div>
         <div className="box">Packet Loss: {lost}</div>
 
-        {/* congestion bar */}
         <div className="bar">
           <div
             className="fill"
             style={{
               width:
                 congestion === "LOW"
-                  ? "30%"
+                  ? "25%"
                   : congestion === "MEDIUM"
                   ? "60%"
                   : "90%"
@@ -187,7 +170,6 @@ export default function App() {
           />
         </div>
 
-        {/* RTT graph */}
         <RTTGraph data={rttHistory} />
 
         {congestion === "HIGH" && (
@@ -196,7 +178,7 @@ export default function App() {
 
       </div>
 
-      {/* RIGHT CHAT PANEL */}
+      {/* RIGHT CHAT */}
       <div className="right">
 
         <div className="chat">
@@ -223,7 +205,6 @@ export default function App() {
                 <div>{m.text}</div>
               </div>
             );
-
           })}
 
         </div>
@@ -236,9 +217,7 @@ export default function App() {
             placeholder="Type message..."
           />
 
-          <button onClick={sendMessage}>
-            Send
-          </button>
+          <button onClick={sendMessage}>Send</button>
 
         </div>
 
