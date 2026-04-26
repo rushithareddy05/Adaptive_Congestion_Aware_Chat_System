@@ -5,44 +5,13 @@ body {
   color: white;
 }
 
-/* HOME */
-.center {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.card {
-  background: #111827;
-  padding: 28px;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.card input {
-  padding: 10px;
-  border-radius: 10px;
-  border: none;
-}
-
-.card button {
-  padding: 10px;
-  border-radius: 10px;
-  border: none;
-  background: #22c55e;
-  cursor: pointer;
-}
-
-/* LAYOUT */
+/* layout */
 .layout {
   display: flex;
   height: 100vh;
 }
 
-/* LEFT PANEL */
+/* left */
 .left {
   width: 30%;
   background: #0f172a;
@@ -56,43 +25,11 @@ body {
   border-radius: 10px;
 }
 
-.low { color: #4ade80; }
-.medium { color: #facc15; }
-.high { color: #ef4444; }
-
-/* BAR */
-.bar {
-  width: 100%;
-  height: 10px;
-  background: #1f2937;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.fill {
-  height: 100%;
-  background: linear-gradient(to right, #22c55e, #facc15, #ef4444);
-}
-
-/* ALERT */
-.slow {
-  background: #ef4444;
-  padding: 10px;
-  text-align: center;
-  border-radius: 10px;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  50% { opacity: 0.5; }
-}
-
-/* CHAT AREA */
+/* chat */
 .right {
   width: 70%;
   display: flex;
   flex-direction: column;
-  background: #0b1220;
 }
 
 .chat {
@@ -104,68 +41,50 @@ body {
   gap: 12px;
 }
 
-/* SYSTEM */
-.system {
-  align-self: center;
-  background: #334155;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-}
-
-/* MESSAGE ROW */
+/* bubbles */
 .msgContainer {
-  width: 100%;
   display: flex;
+  width: 100%;
 }
 
-/* LEFT = others */
 .msgContainer.left {
   justify-content: flex-start;
 }
 
-/* RIGHT = me */
 .msgContainer.right {
   justify-content: flex-end;
 }
 
-/* BUBBLE (IMPORTANT FIX) */
 .msgBubble {
   display: inline-block;
   max-width: 60%;
   padding: 10px 14px;
   border-radius: 14px;
   word-break: break-word;
-  text-align: left;
 }
 
-/* others */
 .msgContainer.left .msgBubble {
   background: #1f2937;
   color: white;
   border-bottom-left-radius: 4px;
 }
 
-/* me */
 .msgContainer.right .msgBubble {
   background: #22c55e;
   color: black;
   border-bottom-right-radius: 4px;
 }
 
-/* NAME */
 .msgName {
   font-size: 11px;
   opacity: 0.7;
-  margin-bottom: 4px;
 }
 
-/* TEXT */
 .msgText {
   font-size: 14px;
 }
 
-/* INPUT */
+/* input */
 .input {
   display: flex;
   padding: 12px;
@@ -183,9 +102,41 @@ body {
 }
 
 .input button {
-  padding: 12px 18px;
-  border-radius: 20px;
   background: #22c55e;
   border: none;
-  cursor: pointer;
+  padding: 12px 18px;
+  border-radius: 20px;
+}
+
+/* admin */
+.adminBox {
+  background: #111827;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.requestCard {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  background: #1f2937;
+  margin-top: 6px;
+  border-radius: 8px;
+}
+
+.reqBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.approve {
+  background: #22c55e;
+  border: none;
+  padding: 5px 8px;
+}
+
+.reject {
+  background: #ef4444;
+  border: none;
+  padding: 5px 8px;
 }
