@@ -3,7 +3,7 @@ import { socket } from "./socket";
 import RTTGraph from "./components/RTTGraph";
 import "./App.css";
 
-export default function App() { 
+export default function App() {
 
   const [screen, setScreen] = useState("home");
 
@@ -32,16 +32,13 @@ export default function App() {
     socket.on("room-list", setRooms);
 
     socket.on("receive-message", (msg) => {
-
-      setMessages((prev) => [...prev, msg]);
-
+      setMessages((p) => [...p, msg]);
       setReceived((p) => p + 1);
 
-      setRtt(msg.rtt || 0);
-      setCongestion(msg.congestion || "LOW");
+      setRtt(msg.rtt);
+      setCongestion(msg.congestion);
 
-      setRttHistory((p) => [...p.slice(-20), msg.rtt || 0]);
-
+      setRttHistory((p) => [...p.slice(-20), msg.rtt]);
     });
 
     socket.on("system-message", (msg) => {
@@ -80,8 +77,8 @@ export default function App() {
 
     setSent((p) => p + 1);
 
-    const lostPacket = Math.random() < 0.08;
-    if (lostPacket) {
+    const lost = Math.random() < 0.08;
+    if (lost) {
       setLost((p) => p + 1);
       setInput("");
       return;
@@ -101,7 +98,7 @@ export default function App() {
     return (
       <div className="center">
         <div className="card">
-          <h1>💬 Adaptive Chat System</h1>
+          <h1>💬 Chat System</h1>
 
           <input
             placeholder="Enter name"
@@ -110,7 +107,10 @@ export default function App() {
           />
 
           <button onClick={createRoom}>Create Room</button>
-          <button onClick={() => setScreen("join")}>Join Room</button>
+
+          <button onClick={() => setScreen("join")}>
+            Join Room
+          </button>
         </div>
       </div>
     );
@@ -121,9 +121,8 @@ export default function App() {
     return (
       <div className="center">
         <div className="card">
-          <h2>Available Rooms</h2>
 
-          {rooms.length === 0 && <p>No rooms available</p>}
+          <h2>Rooms</h2>
 
           {rooms.map((r, i) => (
             <button key={i} onClick={() => joinRoom(r)}>
@@ -131,7 +130,10 @@ export default function App() {
             </button>
           ))}
 
-          <button onClick={() => setScreen("home")}>Back</button>
+          <button onClick={() => setScreen("home")}>
+            Back
+          </button>
+
         </div>
       </div>
     );
@@ -144,7 +146,7 @@ export default function App() {
       {/* LEFT DASHBOARD */}
       <div className="left">
 
-        <h2>📊 Network Dashboard</h2>
+        <h3>📊 Network Monitor</h3>
 
         <div className="box">Room: {roomId}</div>
         <div className="box">RTT: {rtt} ms</div>
@@ -162,7 +164,7 @@ export default function App() {
             style={{
               width:
                 congestion === "LOW"
-                  ? "25%"
+                  ? "30%"
                   : congestion === "MEDIUM"
                   ? "60%"
                   : "90%"
@@ -170,25 +172,23 @@ export default function App() {
           />
         </div>
 
-        <RTTGraph data={rttHistory} />
+        <RTTGraph dataPoints={rttHistory} />
 
         {congestion === "HIGH" && (
-          <div className="slow">⚠ Slow Mode Active</div>
+          <div className="slow">⚠ Slow Mode</div>
         )}
 
       </div>
 
-      {/* RIGHT CHAT */}
+      {/* CHAT */}
       <div className="right">
 
         <div className="chat">
 
           {messages.map((m, i) => {
-
             const isMe = m.name === name;
-            const isSystem = m.name === "system";
 
-            if (isSystem) {
+            if (m.name === "system") {
               return (
                 <div key={i} className="system">
                   {m.text}
@@ -210,19 +210,14 @@ export default function App() {
         </div>
 
         <div className="input">
-
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type message..."
           />
-
           <button onClick={sendMessage}>Send</button>
-
         </div>
 
       </div>
-
     </div>
   );
 }
