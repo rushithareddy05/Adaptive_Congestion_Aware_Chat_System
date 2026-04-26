@@ -4,31 +4,42 @@ import "./App.css";
 
 export default function App() {
 
-  const [screen, setScreen] = useState("home"); 
-  // home | create | join | chat
+  const [screen, setScreen] = useState("home");
 
   const [name, setName] = useState("");
   const [roomId, setRoomId] = useState("");
-  const [inputRoom, setInputRoom] = useState("");
 
+  const [rooms, setRooms] = useState([]);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
-  const [myRoom, setMyRoom] = useState("");
-  const [isHost, setIsHost] = useState(false);
+  const [rtt, setRtt] = useState(0);
+  const [congestion, setCongestion] = useState("LOW");
 
-  // RECEIVE MESSAGES
+  // 📡 GET ROOM LIST
   useEffect(() => {
 
+    socket.emit("get-rooms");
+
+    socket.on("room-list", (list) => {
+      setRooms(list);
+    });
+
     socket.on("receive-message", (msg) => {
+
       setMessages((prev) => [...prev, msg]);
+
+      setRtt(msg.rtt);
+      setCongestion(msg.congestion);
+
     });
 
     socket.on("system-message", (msg) => {
-      setMessages((prev) => [...prev, { name: "system", text: msg.text }]);
+      setMessages((prev) => [...prev, msg]);
     });
 
     return () => {
+      socket.off("room-list");
       socket.off("receive-message");
       socket.off("system-message");
     };
@@ -37,44 +48,33 @@ export default function App() {
 
   // CREATE ROOM
   const createRoom = () => {
-    if (!name.trim()) return;
 
     socket.emit("create-room", { name }, (res) => {
       setRoomId(res.roomId);
-      setMyRoom(res.roomId);
-      setIsHost(true);
       setScreen("chat");
     });
+
   };
 
   // JOIN ROOM
-  const joinRoom = () => {
-    if (!name.trim() || !inputRoom.trim()) return;
+  const joinRoom = (id) => {
 
-    socket.emit(
-      "join-room",
-      { roomId: inputRoom, name },
-      (res) => {
+    socket.emit("join-room", { roomId: id, name }, (res) => {
 
-        if (res.error) {
-          alert(res.error);
-          return;
-        }
+      if (res.error) return alert(res.error);
 
-        setRoomId(res.roomId);
-        setMyRoom(res.roomId);
-        setIsHost(false);
-        setScreen("chat");
-      }
-    );
+      setRoomId(res.roomId);
+      setScreen("chat");
+
+    });
+
   };
 
   // SEND MESSAGE
   const sendMessage = () => {
-    if (!input.trim()) return;
 
     socket.emit("send-message", {
-      roomId: myRoom,
+      roomId,
       text: input,
       name
     });
@@ -91,12 +91,12 @@ export default function App() {
         <h1>💬 Chat System</h1>
 
         <input
-          placeholder="Enter your name"
+          placeholder="Enter name"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
 
-        <button onClick={() => setScreen("create")}>
+        <button onClick={createRoom}>
           Create Room
         </button>
 
@@ -108,34 +108,23 @@ export default function App() {
     );
   }
 
-  if (screen === "create") {
-    return (
-      <div className="center">
-
-        <h2>Create Room</h2>
-
-        <button onClick={createRoom}>
-          Generate Room
-        </button>
-
-      </div>
-    );
-  }
-
+  // ROOM LIST SCREEN
   if (screen === "join") {
     return (
       <div className="center">
 
-        <h2>Join Room</h2>
+        <h2>Available Rooms</h2>
 
-        <input
-          placeholder="Enter Room ID"
-          value={inputRoom}
-          onChange={(e) => setInputRoom(e.target.value)}
-        />
+        {rooms.length === 0 && <p>No rooms available</p>}
 
-        <button onClick={joinRoom}>
-          Join
+        {rooms.map((r, i) => (
+          <button key={i} onClick={() => joinRoom(r)}>
+            Join {r}
+          </button>
+        ))}
+
+        <button onClick={() => setScreen("home")}>
+          Back
         </button>
 
       </div>
@@ -147,15 +136,22 @@ export default function App() {
     <div className="chat-container">
 
       <div className="header">
-        Room: {roomId} {isHost && "👑 Host"}
+        Room: {roomId}
+      </div>
+
+      <div className="status">
+        RTT: {rtt} ms | Congestion: {congestion}
       </div>
 
       <div className="chat-box">
+
         {messages.map((m, i) => (
-          <div key={i} className="msg">
-            <b>{m.name}:</b> {m.text}
+          <div key={i} className="msg-wrapper">
+            <div className="msg-name">{m.name}</div>
+            <div className="msg-bubble">{m.text}</div>
           </div>
         ))}
+
       </div>
 
       <div className="input-area">
