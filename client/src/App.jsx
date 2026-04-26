@@ -77,8 +77,8 @@ export default function App() {
 
     setSent((p) => p + 1);
 
-    const lost = Math.random() < 0.08;
-    if (lost) {
+    const lostPacket = Math.random() < 0.08;
+    if (lostPacket) {
       setLost((p) => p + 1);
       setInput("");
       return;
@@ -98,6 +98,7 @@ export default function App() {
     return (
       <div className="center">
         <div className="card">
+
           <h1>💬 Chat System</h1>
 
           <input
@@ -111,6 +112,7 @@ export default function App() {
           <button onClick={() => setScreen("join")}>
             Join Room
           </button>
+
         </div>
       </div>
     );
@@ -123,6 +125,8 @@ export default function App() {
         <div className="card">
 
           <h2>Rooms</h2>
+
+          {rooms.length === 0 && <p>No rooms available</p>}
 
           {rooms.map((r, i) => (
             <button key={i} onClick={() => joinRoom(r)}>
@@ -150,6 +154,7 @@ export default function App() {
 
         <div className="box">Room: {roomId}</div>
         <div className="box">RTT: {rtt} ms</div>
+
         <div className={`box ${congestion.toLowerCase()}`}>
           Congestion: {congestion}
         </div>
@@ -180,12 +185,13 @@ export default function App() {
 
       </div>
 
-      {/* CHAT */}
+      {/* RIGHT CHAT */}
       <div className="right">
 
         <div className="chat">
 
           {messages.map((m, i) => {
+
             const isMe = m.name === name;
 
             if (m.name === "system") {
@@ -199,12 +205,22 @@ export default function App() {
             return (
               <div
                 key={i}
-                className={`msg ${isMe ? "me" : "other"}`}
+                className={`msgContainer ${isMe ? "right" : "left"}`}
               >
-                <div className="name">{m.name}</div>
-                <div>{m.text}</div>
+
+                {/* NAME (OUTSIDE BUBBLE) */}
+                <div className="msgName">
+                  {m.name}
+                </div>
+
+                {/* BUBBLE */}
+                <div className="msgBubble">
+                  {m.text}
+                </div>
+
               </div>
             );
+
           })}
 
         </div>
@@ -213,11 +229,13 @@ export default function App() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            placeholder="Type message..."
           />
           <button onClick={sendMessage}>Send</button>
         </div>
 
       </div>
+
     </div>
   );
 }
