@@ -1,94 +1,121 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const cors = require("cors");
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import cors from "cors";
+import { v4 as uuidv4 } from "uuid";
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: "*"
+}));
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: "*"
   }
 });
 
-// STORE ROOMS
+// ---------------- DATA STORAGE ----------------
 const rooms = {}; 
-/*
-roomId: {
-  hostId,
-  users: [{id, name}],
-}
-*/
+// roomId: { host, users: [], requests: [] }
 
+// ---------------- SOCKET ----------------
 io.on("connection", (socket) => {
 
-  console.log("Connected:", socket.id);
+  console.log("User connected:", socket.id);
 
-  // 📌 CREATE ROOM (USER BECOMES HOST OF THIS ROOM)
+  // CREATE ROOM
   socket.on("create-room", ({ name }, cb) => {
 
-    const roomId = Math.random().toString(36).substring(2, 7);
+    const roomId = uuidv4().slice(0, 6);
 
     rooms[roomId] = {
-      hostId: socket.id,
-      users: [{ id: socket.id, name }]
+      host: socket.id,
+      hostName: name,
+      users: [{ id: socket.id, name }],
+      requests: []
     };
 
     socket.join(roomId);
 
-    cb({
-      roomId,
-      isHost: true
-    });
+    cb({ roomId });
 
     io.emit("room-list", Object.keys(rooms));
-
   });
 
-  // 📌 GET ALL ROOMS
+  // GET ROOMS
   socket.on("get-rooms", () => {
     socket.emit("room-list", Object.keys(rooms));
   });
 
-  // 📌 JOIN ROOM
+  // JOIN REQUEST
   socket.on("join-room", ({ roomId, name }, cb) => {
 
     const room = rooms[roomId];
-
     if (!room) return cb({ error: "Room not found" });
 
     if (room.users.length >= 10) {
       return cb({ error: "Room full (max 10 users)" });
     }
 
-    room.users.push({ id: socket.id, name });
+    if (room.host === socket.id) {
+      room.users.push({ id: socket.id, name });
+      socket.join(roomId);
+      return cb({ roomId });
+    }
 
-    socket.join(roomId);
+    // send request to host
+    room.requests.push({ id: socket.id, name });
 
-    cb({
-      roomId,
-      isHost: room.hostId === socket.id
+    io.to(room.host).emit("join-request", {
+      id: socket.id,
+      name
     });
+
+    cb({ status: "pending" });
+
+  });
+
+  // HOST APPROVE
+  socket.on("approve-user", ({ roomId, userId }) => {
+
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const user = room.requests.find(u => u.id === userId);
+    if (!user) return;
+
+    room.requests = room.requests.filter(u => u.id !== userId);
+
+    room.users.push(user);
+
+    io.to(userId).emit("join-approved", { roomId });
+
+    io.sockets.sockets.get(userId)?.join(roomId);
 
     io.to(roomId).emit("system-message", {
       name: "system",
-      text: `${name} joined room`
+      text: `${user.name} joined the room`
     });
 
   });
 
-  // 📌 MESSAGE
+  // HOST REJECT
+  socket.on("reject-user", ({ userId }) => {
+    io.to(userId).emit("join-rejected", "Access denied by host");
+  });
+
+  // MESSAGE
   socket.on("send-message", ({ roomId, text, name }) => {
 
-    const rtt = Math.floor(Math.random() * 300) + 50;
+    const rtt = Math.floor(Math.random() * 200) + 50;
 
-    const congestion =
-      rtt < 150 ? "LOW" :
-      rtt < 300 ? "MEDIUM" : "HIGH";
+    let congestion = "LOW";
+    if (rtt > 150) congestion = "MEDIUM";
+    if (rtt > 250) congestion = "HIGH";
 
     io.to(roomId).emit("receive-message", {
       name,
@@ -99,21 +126,13 @@ io.on("connection", (socket) => {
 
   });
 
-  // 📌 DISCONNECT CLEANUP
+  // DISCONNECT
   socket.on("disconnect", () => {
-
-    for (const roomId in rooms) {
-      rooms[roomId].users =
-        rooms[roomId].users.filter(u => u.id !== socket.id);
-    }
-
     console.log("Disconnected:", socket.id);
-
   });
 
 });
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log("Server running on", PORT);
+server.listen(5000, () => {
+  console.log("Server running on port 5000");
 });
