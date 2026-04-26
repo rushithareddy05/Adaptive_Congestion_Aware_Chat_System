@@ -45,7 +45,7 @@ body {
   height: 100vh;
 }
 
-/* ---------------- LEFT PANEL (DASHBOARD) ---------------- */
+/* LEFT PANEL */
 .left {
   width: 30%;
   background: #0f172a;
@@ -60,7 +60,6 @@ body {
   margin: 8px 0;
   border-radius: 10px;
   font-size: 14px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 /* congestion colors */
@@ -81,7 +80,6 @@ body {
 .fill {
   height: 100%;
   background: linear-gradient(to right, #22c55e, #facc15, #ef4444);
-  border-radius: 10px;
 }
 
 /* ALERT */
@@ -126,47 +124,57 @@ body {
   opacity: 0.8;
 }
 
-/* ---------------- MESSAGE CONTAINER ---------------- */
+/* ============================= */
+/* WHATSAPP MESSAGE FIX (FINAL) */
+/* ============================= */
+
 .msgContainer {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  max-width: 65%;
 }
 
 /* LEFT (others) */
 .msgContainer.left {
-  align-self: flex-start;
   align-items: flex-start;
+  align-self: flex-start;
 }
 
 /* RIGHT (you) */
 .msgContainer.right {
-  align-self: flex-end;
   align-items: flex-end;
+  align-self: flex-end;
 }
 
 /* NAME */
 .msgName {
   font-size: 11px;
   opacity: 0.7;
-  margin-bottom: 3px;
-  padding: 0 4px;
+  margin-bottom: 4px;
+  padding: 0 6px;
 }
 
 /* BUBBLE */
 .msgBubble {
+  max-width: 60%;
   padding: 10px 14px;
   border-radius: 14px;
   font-size: 14px;
   word-break: break-word;
-  background: #1f2937;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
 }
 
-/* YOUR MESSAGE */
+/* OTHER USERS */
+.msgContainer.left .msgBubble {
+  background: #1f2937;
+  color: white;
+  border-bottom-left-radius: 4px;
+}
+
+/* YOUR MESSAGES */
 .msgContainer.right .msgBubble {
   background: #22c55e;
   color: black;
+  border-bottom-right-radius: 4px;
 }
 
 /* ---------------- INPUT ---------------- */
@@ -195,42 +203,4 @@ body {
   border: none;
   cursor: pointer;
   font-weight: bold;
-}
-
-/* ============================= */
-/* WHATSAPP ALIGNMENT FIX PATCH */
-/* ============================= */
-
-/* ensures full left/right separation like WhatsApp */
-.msgContainer {
-  width: 100%;
-}
-
-/* RIGHT SIDE (YOU) */
-.msgContainer.right {
-  align-self: flex-end;
-  display: flex;
-  align-items: flex-end;
-}
-
-/* LEFT SIDE (OTHERS) */
-.msgContainer.left {
-  align-self: flex-start;
-  display: flex;
-  align-items: flex-start;
-}
-
-/* make bubble shrink properly like WhatsApp */
-.msgBubble {
-  max-width: 100%;
-  display: inline-block;
-}
-
-/* stronger differentiation for clarity */
-.msgContainer.right .msgBubble {
-  border-bottom-right-radius: 4px;
-}
-
-.msgContainer.left .msgBubble {
-  border-bottom-left-radius: 4px;
 }
