@@ -50,14 +50,16 @@ export default function App() {
 
       setRtt(msg.rtt);
       setCongestion(msg.congestion);
-
       setRttHistory((p) => [...p.slice(-20), msg.rtt]);
 
-      // ---------------- SLOW MODE LOGIC ----------------
+      // ---------------- 🔥 FIXED SLOW MODE LOGIC ----------------
       if (msg.rtt > 200) {
         setSlowMode(true);
-      } else {
-        setSlowMode(false);
+
+        // keep glow visible for 2.5s even if RTT drops
+        setTimeout(() => {
+          setSlowMode(false);
+        }, 2500);
       }
     };
 
