@@ -1,11 +1,11 @@
 body {
   margin: 0;
   font-family: "Segoe UI", sans-serif;
-  background: #0b141a;
+  background: #0f1720; /* lighter than before */
   color: white;
 }
 
-/* ---------------- HOME / JOIN SCREEN ---------------- */
+/* ---------------- HOME ---------------- */
 .center {
   height: 100vh;
   display: flex;
@@ -13,32 +13,76 @@ body {
   align-items: center;
 }
 
-.card {
-  background: #111b21;
+/* HOME CARD */
+.homeCard {
+  background: #16212c;
   padding: 28px;
   border-radius: 16px;
-  width: 320px;
+  width: 340px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
-.card input {
-  padding: 10px;
+.homeCard h1,
+.homeCard h2 {
+  margin: 0;
+}
+
+.subText {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-top: -6px;
+}
+
+/* INPUT */
+.homeCard input {
+  padding: 12px;
   border-radius: 10px;
-  border: none;
+  border: 1px solid #2a3942;
+  background: #0f1a22;
+  color: white;
   outline: none;
-  background: #202c33;
-  color: white;
 }
 
-.card button {
-  padding: 10px;
-  border-radius: 10px;
-  border: none;
+/* ACTION BOXES */
+.actionBox {
+  padding: 14px;
+  border-radius: 12px;
   background: #00a884;
-  color: white;
+  text-align: center;
+  font-weight: 600;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+.actionBox:hover {
+  background: #029d78;
+  transform: scale(1.02);
+}
+
+.actionBox.secondary {
+  background: transparent;
+  border: 1px solid #2a3942;
+}
+
+.actionBox.secondary:hover {
+  background: #1c2a35;
+}
+
+/* ROOM BOX */
+.roomBox {
+  padding: 12px;
+  border-radius: 12px;
+  background: #0f1a22;
+  border: 1px solid #2a3942;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.roomBox:hover {
+  background: #1c2a35;
 }
 
 /* ---------------- LAYOUT ---------------- */
@@ -47,7 +91,6 @@ body {
   height: 100vh;
 }
 
-/* LEFT PANEL */
 .left {
   width: 25%;
   background: #111b21;
@@ -56,7 +99,6 @@ body {
   border-right: 1px solid #2a3942;
 }
 
-/* RIGHT PANEL */
 .right {
   width: 75%;
   display: flex;
@@ -64,7 +106,7 @@ body {
   background: #0b141a;
 }
 
-/* ---------------- CHAT AREA ---------------- */
+/* CHAT */
 .chat {
   flex: 1;
   padding: 10px 12px;
@@ -74,7 +116,6 @@ body {
   gap: 2px;
 }
 
-/* SYSTEM MESSAGE */
 .system {
   align-self: center;
   background: #2a3942;
@@ -84,7 +125,7 @@ body {
   opacity: 0.8;
 }
 
-/* ---------------- MESSAGE CONTAINER ---------------- */
+/* MESSAGES */
 .msgContainer {
   display: flex;
   width: 100%;
@@ -101,7 +142,6 @@ body {
   padding-right: 6px;
 }
 
-/* ---------------- WHATSAPP STYLE BUBBLE ---------------- */
 .msgBubble {
   max-width: 70%;
   padding: 8px 12px;
@@ -109,36 +149,25 @@ body {
   font-size: 14px;
   line-height: 1.4;
   word-break: break-word;
-  position: relative;
 }
 
-/* OTHER USER */
 .msgContainer.other .msgBubble {
   background: #202c33;
   color: #e9edef;
-  border-top-left-radius: 6px;
 }
 
-/* MY MESSAGE */
 .msgContainer.me .msgBubble {
   background: #005c4b;
   color: #e9edef;
-  border-top-right-radius: 6px;
 }
 
-/* NAME */
 .msgName {
   font-size: 11px;
   opacity: 0.6;
   margin-bottom: 2px;
 }
 
-/* TEXT */
-.msgText {
-  font-size: 14px;
-}
-
-/* ---------------- INPUT BAR ---------------- */
+/* INPUT */
 .input {
   display: flex;
   gap: 10px;
@@ -166,7 +195,7 @@ body {
   cursor: pointer;
 }
 
-/* ---------------- LEFT SIDEBAR BOXES ---------------- */
+/* LEFT BOX */
 .box {
   background: #202c33;
   padding: 10px;
@@ -175,7 +204,7 @@ body {
   font-size: 13px;
 }
 
-/* ---------------- CONGESTION BAR ---------------- */
+/* BAR */
 .bar {
   width: 100%;
   height: 8px;
@@ -185,13 +214,12 @@ body {
   margin-top: 10px;
 }
 
-/* IMPORTANT: fill div inside bar */
 .fill {
   height: 100%;
   transition: width 0.3s ease;
 }
 
-/* ---------------- ADMIN PANEL ---------------- */
+/* ADMIN */
 .adminBox {
   margin-top: 12px;
   background: #111b21;
@@ -209,7 +237,6 @@ body {
   border-radius: 8px;
 }
 
-/* ADMIN BUTTONS */
 .reqBtns {
   display: flex;
   gap: 6px;
