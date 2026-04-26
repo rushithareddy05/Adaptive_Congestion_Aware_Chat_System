@@ -17,6 +17,7 @@ export default function App() {
   const [rtt, setRtt] = useState(0);
 
   const [congestion, setCongestion] = useState("LOW");
+  const [slowMode, setSlowMode] = useState(false);
 
   const [sent, setSent] = useState(0);
   const [received, setReceived] = useState(0);
@@ -24,7 +25,7 @@ export default function App() {
 
   const [joinRequests, setJoinRequests] = useState([]);
 
-  // ---------------- SOCKET SETUP (FIXED) ----------------
+  // ---------------- SOCKET SETUP ----------------
   useEffect(() => {
     socket.emit("get-rooms");
 
@@ -51,6 +52,13 @@ export default function App() {
       setCongestion(msg.congestion);
 
       setRttHistory((p) => [...p.slice(-20), msg.rtt]);
+
+      // ---------------- SLOW MODE LOGIC ----------------
+      if (msg.rtt > 220) {
+        setSlowMode(true);
+      } else {
+        setSlowMode(false);
+      }
     };
 
     const handleSystem = (msg) => {
@@ -110,7 +118,7 @@ export default function App() {
     setInput("");
   };
 
-  // ---------------- APPROVE USER ----------------
+  // ---------------- APPROVE ----------------
   const approveUser = (userId, roomId) => {
     socket.emit("approve-user", { userId, roomId });
     setJoinRequests((p) => p.filter((r) => r.id !== userId));
@@ -189,7 +197,7 @@ export default function App() {
 
   // ---------------- CHAT ----------------
   return (
-    <div className="layout">
+    <div className={`layout ${slowMode ? "slowMode" : ""}`}>
 
       <div className="left">
         <h3>📊 Network Monitor</h3>
