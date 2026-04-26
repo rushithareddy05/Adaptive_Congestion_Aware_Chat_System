@@ -5,7 +5,7 @@ body {
   color: white;
 }
 
-/* ---------------- HOME ---------------- */
+/* HOME */
 .center {
   height: 100vh;
   display: flex;
@@ -20,14 +20,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
 .card input {
   padding: 10px;
   border-radius: 10px;
   border: none;
-  outline: none;
 }
 
 .card button {
@@ -36,22 +34,19 @@ body {
   border: none;
   background: #22c55e;
   cursor: pointer;
-  font-weight: 600;
 }
 
-/* ---------------- MAIN LAYOUT ---------------- */
+/* LAYOUT */
 .layout {
   display: flex;
   height: 100vh;
 }
 
-/* LEFT PANEL */
+/* LEFT */
 .left {
   width: 30%;
   background: #0f172a;
   padding: 20px;
-  border-right: 1px solid #1e293b;
-  overflow-y: auto;
 }
 
 .box {
@@ -59,10 +54,8 @@ body {
   padding: 12px;
   margin: 8px 0;
   border-radius: 10px;
-  font-size: 14px;
 }
 
-/* congestion colors */
 .low { color: #4ade80; }
 .medium { color: #facc15; }
 .high { color: #ef4444; }
@@ -73,7 +66,6 @@ body {
   height: 10px;
   background: #1f2937;
   border-radius: 10px;
-  margin: 12px 0;
   overflow: hidden;
 }
 
@@ -88,7 +80,6 @@ body {
   padding: 10px;
   text-align: center;
   border-radius: 10px;
-  font-weight: bold;
   animation: blink 1s infinite;
 }
 
@@ -96,7 +87,7 @@ body {
   50% { opacity: 0.5; }
 }
 
-/* ---------------- CHAT ---------------- */
+/* CHAT AREA */
 .right {
   width: 70%;
   display: flex;
@@ -113,29 +104,25 @@ body {
   gap: 12px;
 }
 
-/* SYSTEM MESSAGE */
+/* SYSTEM */
 .system {
   align-self: center;
   background: #334155;
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 12px;
-  opacity: 0.8;
 }
 
-/* ================= CHAT BUBBLES ================= */
-
+/* MSG CONTAINER */
 .msgContainer {
-  display: flex;
   width: 100%;
+  display: flex;
 }
 
-/* LEFT (others) */
 .msgContainer.left {
   justify-content: flex-start;
 }
 
-/* RIGHT (me) */
 .msgContainer.right {
   justify-content: flex-end;
 }
@@ -151,46 +138,37 @@ body {
   word-break: break-word;
 }
 
-/* OTHERS (dark grey) */
+/* OTHERS */
 .msgContainer.left .msgBubble {
   background: #1f2937;
   color: white;
   border-bottom-left-radius: 4px;
 }
 
-/* ME (green) */
+/* ME */
 .msgContainer.right .msgBubble {
   background: #22c55e;
   color: black;
   border-bottom-right-radius: 4px;
 }
 
-/* NAME POSITION FIX */
+/* NAME */
 .msgName {
   font-size: 11px;
   opacity: 0.7;
 }
 
-.msgContainer.left .msgName {
-  align-self: flex-start;
-}
-
-.msgContainer.right .msgName {
-  align-self: flex-end;
-}
-
-/* MESSAGE TEXT */
+/* TEXT */
 .msgText {
   font-size: 14px;
 }
 
-/* ---------------- INPUT ---------------- */
+/* INPUT */
 .input {
   display: flex;
   padding: 12px;
   gap: 10px;
   background: #111827;
-  border-top: 1px solid #1e293b;
 }
 
 .input input {
@@ -198,7 +176,6 @@ body {
   padding: 12px;
   border-radius: 20px;
   border: none;
-  outline: none;
   background: #0f172a;
   color: white;
 }
@@ -209,5 +186,4 @@ body {
   background: #22c55e;
   border: none;
   cursor: pointer;
-  font-weight: bold;
 }
