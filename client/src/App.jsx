@@ -54,7 +54,7 @@ export default function App() {
       setRttHistory((p) => [...p.slice(-20), msg.rtt]);
 
       // ---------------- SLOW MODE LOGIC ----------------
-      if (msg.rtt > 220) {
+      if (msg.rtt > 200) {
         setSlowMode(true);
       } else {
         setSlowMode(false);
@@ -135,10 +135,10 @@ export default function App() {
       <div className="center">
         <div className="homeCard">
 
-          <div className="logoTitle">💬 Chat System</div>
+          <div className="logoTitle">💬 Chat</div>
 
           <div className="subText">
-            Real-time congestion-aware chat system
+            Real-Time Congestion-Aware Chat System
           </div>
 
           <input
