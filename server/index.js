@@ -12,11 +12,11 @@ const io = new Server(server, {
   cors: { origin: "*" }
 });
 
-// ROOMS
+// ---------------- DATA ----------------
 const rooms = {};
 const users = {};
 
-// HELPERS
+// ---------------- HELPERS ----------------
 const generateRoomId = () =>
   Math.random().toString(36).substring(2, 8);
 
@@ -28,11 +28,12 @@ const getCongestion = (rtt) => {
   return "HIGH";
 };
 
+// ---------------- SOCKET ----------------
 io.on("connection", (socket) => {
 
   console.log("Connected:", socket.id);
 
-  // ROOM LIST
+  // GET ROOMS
   socket.on("get-rooms", () => {
     socket.emit("room-list", Object.keys(rooms));
   });
@@ -63,7 +64,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  // JOIN REQUEST
+  // JOIN ROOM
   socket.on("join-room", ({ roomId, name }, cb) => {
 
     const room = rooms[roomId];
@@ -82,7 +83,7 @@ io.on("connection", (socket) => {
     cb?.({ status: "pending" });
   });
 
-  // APPROVE USER
+  // APPROVE USER (FIXED + FULL SYNC)
   socket.on("approve-user", ({ roomId, userId }) => {
 
     const room = rooms[roomId];
@@ -97,9 +98,19 @@ io.on("connection", (socket) => {
     const client = io.sockets.sockets.get(userId);
 
     if (client) {
+
       client.join(roomId);
 
-      users[userId].roomId = roomId;
+      users[userId] = {
+        name: user.name,
+        roomId
+      };
+
+      // 🔥 send room update to friend
+      client.emit("approved", {
+        roomId,
+        name: user.name
+      });
 
       io.to(roomId).emit("system-message", {
         name: "system",
@@ -110,6 +121,7 @@ io.on("connection", (socket) => {
 
   // REJECT USER
   socket.on("reject-user", ({ userId }) => {
+
     const client = io.sockets.sockets.get(userId);
 
     if (client) {
@@ -126,7 +138,8 @@ io.on("connection", (socket) => {
     const room = rooms[roomId];
     if (!room) return;
 
-    if (!room.users.find(u => u.id === socket.id)) return;
+    const isMember = room.users.find(u => u.id === socket.id);
+    if (!isMember) return;
 
     const rtt = getRTT();
     const congestion = getCongestion(rtt);
