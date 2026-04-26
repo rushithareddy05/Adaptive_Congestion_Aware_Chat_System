@@ -20,7 +20,7 @@ const users = {};
 const generateRoomId = () =>
   Math.random().toString(36).substring(2, 8);
 
-const getRTT = () => Math.floor(Math.random() * 250) + 50;
+const getRTT = () => Math.floor(Math.random() * 300) + 50;
 
 const getCongestion = (rtt) => {
   if (rtt < 120) return "LOW";
@@ -28,14 +28,29 @@ const getCongestion = (rtt) => {
   return "HIGH";
 };
 
+// ---------------- CLEANUP ----------------
+const cleanupRoom = (roomId) => {
+  const room = rooms[roomId];
+  if (!room) return;
+
+  if (room.users.length === 0) {
+    delete rooms[roomId];
+    io.emit("room-list", Object.keys(rooms));
+  }
+};
+
 // ---------------- SOCKET ----------------
 io.on("connection", (socket) => {
 
   console.log("Connected:", socket.id);
 
-  // GET ROOMS
+  // GET ROOMS (ONLY ACTIVE)
   socket.on("get-rooms", () => {
-    socket.emit("room-list", Object.keys(rooms));
+    const activeRooms = Object.entries(rooms)
+      .filter(([_, room]) => room.users.length > 0)
+      .map(([id]) => id);
+
+    socket.emit("room-list", activeRooms);
   });
 
   // CREATE ROOM
@@ -83,7 +98,7 @@ io.on("connection", (socket) => {
     cb?.({ status: "pending" });
   });
 
-  // APPROVE USER (FIXED + FULL SYNC)
+  // APPROVE USER
   socket.on("approve-user", ({ roomId, userId }) => {
 
     const room = rooms[roomId];
@@ -98,7 +113,6 @@ io.on("connection", (socket) => {
     const client = io.sockets.sockets.get(userId);
 
     if (client) {
-
       client.join(roomId);
 
       users[userId] = {
@@ -106,7 +120,6 @@ io.on("connection", (socket) => {
         roomId
       };
 
-      // 🔥 send room update to friend
       client.emit("approved", {
         roomId,
         name: user.name
@@ -117,6 +130,8 @@ io.on("connection", (socket) => {
         text: `${user.name} joined 🎉`
       });
     }
+
+    io.emit("room-list", Object.keys(rooms));
   });
 
   // REJECT USER
@@ -152,14 +167,18 @@ io.on("connection", (socket) => {
     });
   });
 
-  // DISCONNECT
+  // DISCONNECT (FIXED CLEANUP)
   socket.on("disconnect", () => {
 
     const user = users[socket.id];
 
     if (user?.roomId && rooms[user.roomId]) {
-      rooms[user.roomId].users =
-        rooms[user.roomId].users.filter(u => u.id !== socket.id);
+
+      const room = rooms[user.roomId];
+
+      room.users = room.users.filter(u => u.id !== socket.id);
+
+      cleanupRoom(user.roomId);
     }
 
     delete users[socket.id];
