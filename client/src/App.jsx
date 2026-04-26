@@ -106,8 +106,12 @@ export default function App() {
     return (
       <div className="center">
         <div className="homeCard">
-          <h1>💬 Chat System</h1>
-          <p className="subText">Real-time congestion-aware chat</p>
+
+          <div className="logoTitle">💬 Chat System</div>
+
+          <div className="subText">
+            Real-time congestion-aware chat system
+          </div>
 
           <input
             placeholder="Enter your name"
@@ -115,13 +119,22 @@ export default function App() {
             onChange={(e) => setName(e.target.value)}
           />
 
-          <div className="actionBox" onClick={createRoom}>
-            🚀 Create Room
+          <div className="actionCard create" onClick={createRoom}>
+            <div className="icon">🚀</div>
+            <div>
+              <div className="title">Create Room</div>
+              <div className="desc">Start new chat session</div>
+            </div>
           </div>
 
-          <div className="actionBox secondary" onClick={() => setScreen("join")}>
-            📡 Join Room
+          <div className="actionCard join" onClick={() => setScreen("join")}>
+            <div className="icon">📡</div>
+            <div>
+              <div className="title">Join Room</div>
+              <div className="desc">Join existing room</div>
+            </div>
           </div>
+
         </div>
       </div>
     );
@@ -132,10 +145,11 @@ export default function App() {
     return (
       <div className="center">
         <div className="homeCard">
-          <h2>Available Rooms</h2>
+
+          <div className="logoTitle">📡 Rooms</div>
 
           {rooms.length === 0 && (
-            <p className="subText">No active rooms</p>
+            <div className="subText">No active rooms</div>
           )}
 
           {rooms.map((r, i) => (
@@ -145,11 +159,12 @@ export default function App() {
           ))}
 
           <div
-            className="actionBox secondary"
+            className="actionCard back"
             onClick={() => setScreen("home")}
           >
             ← Back
           </div>
+
         </div>
       </div>
     );
@@ -158,7 +173,7 @@ export default function App() {
   /* ---------------- CHAT ---------------- */
   return (
     <div className="layout">
-      {/* LEFT */}
+
       <div className="left">
         <h3>📊 Network Monitor</h3>
 
@@ -200,18 +215,8 @@ export default function App() {
               <div key={i} className="requestCard">
                 <b>{r.name}</b>
                 <div className="reqBtns">
-                  <button
-                    onClick={() => approveUser(r.id, r.roomId)}
-                    className="approve"
-                  >
-                    ✔
-                  </button>
-                  <button
-                    onClick={() => rejectUser(r.id)}
-                    className="reject"
-                  >
-                    ✖
-                  </button>
+                  <button onClick={() => approveUser(r.id, r.roomId)} className="approve">✔</button>
+                  <button onClick={() => rejectUser(r.id)} className="reject">✖</button>
                 </div>
               </div>
             ))}
@@ -219,9 +224,9 @@ export default function App() {
         )}
       </div>
 
-      {/* RIGHT */}
       <div className="right">
         <div className="chat">
+
           {messages.map((m, i) => {
             if (m.name === "system") {
               return (
@@ -234,10 +239,7 @@ export default function App() {
             const isMe = m.name === name;
 
             return (
-              <div
-                key={i}
-                className={`msgContainer ${isMe ? "me" : "other"}`}
-              >
+              <div key={i} className={`msgContainer ${isMe ? "me" : "other"}`}>
                 <div className="msgBubble">
                   <div className="msgName">{m.name}</div>
                   <div className="msgText">{m.text}</div>
@@ -245,6 +247,7 @@ export default function App() {
               </div>
             );
           })}
+
         </div>
 
         <div className="input">
@@ -255,7 +258,9 @@ export default function App() {
           />
           <button onClick={sendMessage}>Send</button>
         </div>
+
       </div>
+
     </div>
   );
 }
