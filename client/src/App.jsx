@@ -15,8 +15,8 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
-  const [rtt, setRtt] = useState(0);
   const [rttHistory, setRttHistory] = useState([]);
+  const [rtt, setRtt] = useState(0);
 
   const [congestion, setCongestion] = useState("LOW");
 
@@ -40,12 +40,12 @@ export default function App() {
       setRtt(msg.rtt);
       setCongestion(msg.congestion);
 
-      setRttHistory((prev) => [...prev.slice(-15), msg.rtt]);
+      setRttHistory((p) => [...p.slice(-15), msg.rtt]);
 
     });
 
     socket.on("system-message", (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((p) => [...p, msg]);
     });
 
     return () => {
@@ -80,10 +80,8 @@ export default function App() {
 
     setSent((p) => p + 1);
 
-    // packet loss simulation
-    const isLost = Math.random() < 0.1;
-
-    if (isLost) {
+    const lostPacket = Math.random() < 0.1;
+    if (lostPacket) {
       setLost((p) => p + 1);
       setInput("");
       return;
@@ -154,28 +152,30 @@ export default function App() {
     );
   }
 
-  // ---------------- CHAT ----------------
+  // ---------------- CHAT LAYOUT ----------------
   return (
     <div className="layout">
 
-      {/* LEFT DASHBOARD */}
-      <div className="left-panel">
+      {/* LEFT PANEL */}
+      <div className="left">
 
-        <h2>📊 Network Panel</h2>
+        <h2>📊 Network Monitor</h2>
 
-        <div className="stat">Room: {roomId}</div>
-        <div className="stat">RTT: {rtt} ms</div>
-        <div className={`stat ${congestion.toLowerCase()}`}>
+        <div className="box">Room: {roomId}</div>
+        <div className="box">RTT: {rtt} ms</div>
+
+        <div className={`box ${congestion.toLowerCase()}`}>
           Congestion: {congestion}
         </div>
 
-        <div className="stat">Sent: {sent}</div>
-        <div className="stat">Received: {received}</div>
-        <div className="stat">Packet Loss: {lost}</div>
+        <div className="box">Sent: {sent}</div>
+        <div className="box">Received: {received}</div>
+        <div className="box">Packet Loss: {lost}</div>
 
-        <div className="bar-container">
+        {/* congestion bar */}
+        <div className="bar">
           <div
-            className="bar"
+            className="fill"
             style={{
               width:
                 congestion === "LOW"
@@ -187,6 +187,7 @@ export default function App() {
           />
         </div>
 
+        {/* RTT graph */}
         <RTTGraph data={rttHistory} />
 
         {congestion === "HIGH" && (
@@ -195,10 +196,10 @@ export default function App() {
 
       </div>
 
-      {/* CHAT PANEL */}
-      <div className="chat-panel">
+      {/* RIGHT CHAT PANEL */}
+      <div className="right">
 
-        <div className="chat-box">
+        <div className="chat">
 
           {messages.map((m, i) => {
 
