@@ -17,14 +17,14 @@ const io = new Server(server, {
 const rooms = {};
 
 // ---------------- HELPERS ----------------
-const genRoomId = () =>
+const generateRoomId = () =>
   Math.random().toString(36).substring(2, 8);
 
-const getRTT = () => Math.floor(Math.random() * 220) + 40;
+const getRTT = () => Math.floor(Math.random() * 250) + 50;
 
 const getCongestion = (rtt) => {
   if (rtt < 120) return "LOW";
-  if (rtt < 200) return "MEDIUM";
+  if (rtt < 220) return "MEDIUM";
   return "HIGH";
 };
 
@@ -33,15 +33,21 @@ io.on("connection", (socket) => {
 
   console.log("Connected:", socket.id);
 
-  // CREATE ROOM (HOST)
+  // ROOM LIST
+  socket.on("get-rooms", () => {
+    socket.emit("room-list", Object.keys(rooms));
+  });
+
+  // CREATE ROOM
   socket.on("create-room", ({ name }, cb) => {
 
-    const roomId = genRoomId();
+    const roomId = generateRoomId();
 
     rooms[roomId] = {
       host: socket.id,
       hostName: name,
-      users: [{ id: socket.id, name }]
+      users: [{ id: socket.id, name }],
+      requests: []
     };
 
     socket.join(roomId);
@@ -56,31 +62,45 @@ io.on("connection", (socket) => {
     });
   });
 
-  // GET ROOMS
-  socket.on("get-rooms", () => {
-    socket.emit("room-list", Object.keys(rooms));
-  });
-
   // JOIN ROOM
   socket.on("join-room", ({ roomId, name }, cb) => {
 
     const room = rooms[roomId];
-
     if (!room) return cb?.({ error: "Room not found" });
 
-    if (room.users.length >= 10)
-      return cb?.({ error: "Room full (max 10 users)" });
+    room.requests.push({ id: socket.id, name });
 
-    room.users.push({ id: socket.id, name });
-
-    socket.join(roomId);
-
-    cb?.({ roomId });
-
-    io.to(roomId).emit("system-message", {
-      name: "system",
-      text: `${name} joined`
+    io.to(room.host).emit("join-request", {
+      id: socket.id,
+      name,
+      roomId
     });
+
+    cb?.({ status: "pending" });
+  });
+
+  // APPROVE USER
+  socket.on("approve-user", ({ roomId, userId }) => {
+
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const user = room.requests.find(u => u.id === userId);
+    if (!user) return;
+
+    room.requests = room.requests.filter(u => u.id !== userId);
+    room.users.push(user);
+
+    const client = io.sockets.sockets.get(userId);
+
+    if (client) {
+      client.join(roomId);
+
+      io.to(roomId).emit("system-message", {
+        name: "system",
+        text: `${user.name} joined 🎉`
+      });
+    }
   });
 
   // MESSAGE
@@ -105,5 +125,5 @@ io.on("connection", (socket) => {
 });
 
 server.listen(5000, () => {
-  console.log("Server running on 5000");
+  console.log("Server running on port 5000");
 });
