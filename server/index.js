@@ -15,29 +15,46 @@ const io = new Server(server, {
   }
 });
 
+// STORE ROOMS
 const rooms = {}; 
-// { roomId: { host: socket.id, users: [{id,name}] } }
+/*
+roomId: {
+  hostId,
+  users: [{id, name}],
+}
+*/
 
 io.on("connection", (socket) => {
 
-  console.log("User connected:", socket.id);
+  console.log("Connected:", socket.id);
 
-  // CREATE ROOM
+  // 📌 CREATE ROOM (USER BECOMES HOST OF THIS ROOM)
   socket.on("create-room", ({ name }, cb) => {
 
-    const roomId = Math.random().toString(36).substring(2, 8);
+    const roomId = Math.random().toString(36).substring(2, 7);
 
     rooms[roomId] = {
-      host: socket.id,
+      hostId: socket.id,
       users: [{ id: socket.id, name }]
     };
 
     socket.join(roomId);
 
-    cb({ roomId, isHost: true });
+    cb({
+      roomId,
+      isHost: true
+    });
+
+    io.emit("room-list", Object.keys(rooms));
+
   });
 
-  // JOIN ROOM
+  // 📌 GET ALL ROOMS
+  socket.on("get-rooms", () => {
+    socket.emit("room-list", Object.keys(rooms));
+  });
+
+  // 📌 JOIN ROOM
   socket.on("join-room", ({ roomId, name }, cb) => {
 
     const room = rooms[roomId];
@@ -52,24 +69,46 @@ io.on("connection", (socket) => {
 
     socket.join(roomId);
 
-    cb({ success: true, roomId, isHost: false });
+    cb({
+      roomId,
+      isHost: room.hostId === socket.id
+    });
 
     io.to(roomId).emit("system-message", {
-      text: `${name} joined the room`
+      name: "system",
+      text: `${name} joined room`
     });
+
   });
 
-  // SEND MESSAGE
+  // 📌 MESSAGE
   socket.on("send-message", ({ roomId, text, name }) => {
+
+    const rtt = Math.floor(Math.random() * 300) + 50;
+
+    const congestion =
+      rtt < 150 ? "LOW" :
+      rtt < 300 ? "MEDIUM" : "HIGH";
+
     io.to(roomId).emit("receive-message", {
+      name,
       text,
-      name
+      rtt,
+      congestion
     });
+
   });
 
-  // DISCONNECT
+  // 📌 DISCONNECT CLEANUP
   socket.on("disconnect", () => {
+
+    for (const roomId in rooms) {
+      rooms[roomId].users =
+        rooms[roomId].users.filter(u => u.id !== socket.id);
+    }
+
     console.log("Disconnected:", socket.id);
+
   });
 
 });
