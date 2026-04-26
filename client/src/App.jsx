@@ -3,7 +3,7 @@ import { socket } from "./socket";
 import RTTGraph from "./components/RTTGraph";
 import "./App.css";
 
-export default function App() {
+export default function App() { 
 
   const [screen, setScreen] = useState("home");
 
