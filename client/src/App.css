@@ -1,11 +1,11 @@
 body {
   margin: 0;
   font-family: "Segoe UI", sans-serif;
-  background: #0b1220;
+  background: #0b141a;
   color: white;
 }
 
-/* ---------------- HOME ---------------- */
+/* ---------------- HOME / JOIN SCREEN ---------------- */
 .center {
   height: 100vh;
   display: flex;
@@ -14,13 +14,31 @@ body {
 }
 
 .card {
-  background: #111827;
-  padding: 32px;
-  border-radius: 18px;
+  background: #111b21;
+  padding: 28px;
+  border-radius: 16px;
   width: 320px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+}
+
+.card input {
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background: #202c33;
+  color: white;
+}
+
+.card button {
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #00a884;
+  color: white;
+  cursor: pointer;
 }
 
 /* ---------------- LAYOUT ---------------- */
@@ -29,140 +47,186 @@ body {
   height: 100vh;
 }
 
+/* LEFT PANEL */
 .left {
   width: 25%;
-  background: #0f172a;
-  padding: 16px;
+  background: #111b21;
+  padding: 14px;
   overflow-y: auto;
-  border-right: 1px solid #1e293b;
+  border-right: 1px solid #2a3942;
 }
 
+/* RIGHT PANEL */
 .right {
   width: 75%;
   display: flex;
   flex-direction: column;
+  background: #0b141a;
 }
 
-/* ---------------- CHAT ---------------- */
+/* ---------------- CHAT AREA ---------------- */
 .chat {
   flex: 1;
-  padding: 16px;
+  padding: 10px 12px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 2px;
 }
 
 /* SYSTEM MESSAGE */
 .system {
   align-self: center;
-  background: #334155;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
+  background: #2a3942;
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  opacity: 0.8;
 }
 
-/* ---------------- MESSAGES (FIXED WHATSAPP STYLE) ---------------- */
+/* ---------------- MESSAGE CONTAINER ---------------- */
 .msgContainer {
   display: flex;
   width: 100%;
+  margin: 2px 0;
 }
 
 .msgContainer.other {
   justify-content: flex-start;
+  padding-left: 6px;
 }
 
 .msgContainer.me {
   justify-content: flex-end;
+  padding-right: 6px;
 }
 
+/* ---------------- WHATSAPP STYLE BUBBLE ---------------- */
 .msgBubble {
-  max-width: 65%;
-  padding: 10px 14px;
-  border-radius: 14px;
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
   word-break: break-word;
+  position: relative;
 }
 
+/* OTHER USER */
 .msgContainer.other .msgBubble {
-  background: #1f2937;
-  border-bottom-left-radius: 4px;
+  background: #202c33;
+  color: #e9edef;
+  border-top-left-radius: 6px;
 }
 
+/* MY MESSAGE */
 .msgContainer.me .msgBubble {
-  background: #22c55e;
-  color: black;
-  border-bottom-right-radius: 4px;
+  background: #005c4b;
+  color: #e9edef;
+  border-top-right-radius: 6px;
 }
 
+/* NAME */
 .msgName {
   font-size: 11px;
-  opacity: 0.7;
-  margin-bottom: 3px;
+  opacity: 0.6;
+  margin-bottom: 2px;
 }
 
+/* TEXT */
 .msgText {
   font-size: 14px;
 }
 
-/* ---------------- INPUT BAR FIXED ---------------- */
+/* ---------------- INPUT BAR ---------------- */
 .input {
   display: flex;
-  padding: 12px;
   gap: 10px;
-  background: #0b1220;
-  border-top: 1px solid #1e293b;
-  position: sticky;
-  bottom: 0;
+  padding: 10px;
+  background: #111b21;
+  border-top: 1px solid #2a3942;
 }
 
 .input input {
   flex: 1;
-  padding: 12px;
+  padding: 10px 14px;
   border-radius: 20px;
-  border: 1px solid #334155;
-  background: #0f172a;
+  border: none;
+  outline: none;
+  background: #202c33;
   color: white;
 }
 
 .input button {
-  background: #22c55e;
+  background: #00a884;
   border: none;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border-radius: 20px;
+  color: white;
+  cursor: pointer;
 }
 
-/* ---------------- BOX ---------------- */
+/* ---------------- LEFT SIDEBAR BOXES ---------------- */
 .box {
-  background: #111827;
+  background: #202c33;
   padding: 10px;
   margin: 6px 0;
   border-radius: 10px;
   font-size: 13px;
 }
 
-/* ---------------- CONGESTION BAR FIXED ---------------- */
+/* ---------------- CONGESTION BAR ---------------- */
 .bar {
   width: 100%;
   height: 8px;
-  background: #1f2937;
+  background: #2a3942;
   border-radius: 10px;
   overflow: hidden;
   margin-top: 10px;
 }
 
-/* ---------------- ADMIN ---------------- */
+/* IMPORTANT: fill div inside bar */
+.fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* ---------------- ADMIN PANEL ---------------- */
 .adminBox {
-  background: #111827;
+  margin-top: 12px;
+  background: #111b21;
   padding: 10px;
   border-radius: 10px;
-  margin-top: 10px;
 }
 
 .requestCard {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  background: #202c33;
   padding: 8px;
-  background: #1f2937;
   margin-top: 6px;
   border-radius: 8px;
+}
+
+/* ADMIN BUTTONS */
+.reqBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.approve {
+  background: #22c55e;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.reject {
+  background: #ef4444;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
 }
