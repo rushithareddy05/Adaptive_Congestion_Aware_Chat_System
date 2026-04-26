@@ -180,7 +180,7 @@ export default function App() {
         <RTTGraph dataPoints={rttHistory} />
 
         {congestion === "HIGH" && (
-          <div className="slow">⚠ Slow Mode</div>
+          <div className="slow">⚠ Slow Mode Active</div>
         )}
 
       </div>
@@ -205,19 +205,10 @@ export default function App() {
             return (
               <div
                 key={i}
-                className={`msgContainer ${isMe ? "right" : "left"}`}
+                className={`msg ${isMe ? "me" : "other"}`}
               >
-
-                {/* NAME (OUTSIDE BUBBLE) */}
-                <div className="msgName">
-                  {m.name}
-                </div>
-
-                {/* BUBBLE */}
-                <div className="msgBubble">
-                  {m.text}
-                </div>
-
+                <div className="msgName">{m.name}</div>
+                <div className="msgText">{m.text}</div>
               </div>
             );
 
