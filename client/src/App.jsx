@@ -4,158 +4,161 @@ import "./App.css";
 
 export default function App() {
 
+  const [screen, setScreen] = useState("home"); 
+  // home | create | join | chat
+
   const [name, setName] = useState("");
-  const [joined, setJoined] = useState(false);
-  const [waiting, setWaiting] = useState(false);
-  const [isHost, setIsHost] = useState(false);
+  const [roomId, setRoomId] = useState("");
+  const [inputRoom, setInputRoom] = useState("");
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
-  const [requests, setRequests] = useState([]);
-  const [myId, setMyId] = useState("");
+  const [myRoom, setMyRoom] = useState("");
+  const [isHost, setIsHost] = useState(false);
 
-  // ---------------- SOCKET ----------------
+  // RECEIVE MESSAGES
   useEffect(() => {
 
-    const onConnect = () => {
-      setMyId(socket.id.slice(0, 5));
-    };
-
-    const onHost = () => {
-      setIsHost(true);
-      setJoined(true);
-      setWaiting(false);
-    };
-
-    const onRequest = (user) => {
-      setRequests((prev) => [...prev, user]);
-    };
-
-    const onApproved = () => {
-      setWaiting(false);
-      setJoined(true);
-    };
-
-    const onRejected = (msg) => {
-      setWaiting(false);
-      alert(msg);
-    };
-
-    const onMessage = (msg) => {
+    socket.on("receive-message", (msg) => {
       setMessages((prev) => [...prev, msg]);
-    };
+    });
 
-    socket.on("connect", onConnect);
-    socket.on("you-are-host", onHost);
-    socket.on("join-request", onRequest);
-    socket.on("join-approved", onApproved);
-    socket.on("join-rejected", onRejected);
-    socket.on("receive-message", onMessage);
+    socket.on("system-message", (msg) => {
+      setMessages((prev) => [...prev, { name: "system", text: msg.text }]);
+    });
 
-    // 🔥 CLEANUP (IMPORTANT FOR VERCEL)
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("you-are-host", onHost);
-      socket.off("join-request", onRequest);
-      socket.off("join-approved", onApproved);
-      socket.off("join-rejected", onRejected);
-      socket.off("receive-message", onMessage);
+      socket.off("receive-message");
+      socket.off("system-message");
     };
 
   }, []);
 
-  // ---------------- JOIN REQUEST ----------------
-  const handleJoin = () => {
+  // CREATE ROOM
+  const createRoom = () => {
     if (!name.trim()) return;
 
-    socket.emit("request-join", name);
-    setWaiting(true);
+    socket.emit("create-room", { name }, (res) => {
+      setRoomId(res.roomId);
+      setMyRoom(res.roomId);
+      setIsHost(true);
+      setScreen("chat");
+    });
   };
 
-  // ---------------- HOST ACTIONS ----------------
-  const approveUser = (id) => {
-    socket.emit("approve-user", id);
-    setRequests((prev) => prev.filter((r) => r.id !== id));
+  // JOIN ROOM
+  const joinRoom = () => {
+    if (!name.trim() || !inputRoom.trim()) return;
+
+    socket.emit(
+      "join-room",
+      { roomId: inputRoom, name },
+      (res) => {
+
+        if (res.error) {
+          alert(res.error);
+          return;
+        }
+
+        setRoomId(res.roomId);
+        setMyRoom(res.roomId);
+        setIsHost(false);
+        setScreen("chat");
+      }
+    );
   };
 
-  const rejectUser = (id) => {
-    socket.emit("reject-user", id);
-    setRequests((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  // ---------------- SEND MESSAGE ----------------
+  // SEND MESSAGE
   const sendMessage = () => {
     if (!input.trim()) return;
 
-    socket.emit("send-message", { text: input });
-
-    setMessages((prev) => [
-      ...prev,
-      { text: input, name: "You" }
-    ]);
+    socket.emit("send-message", {
+      roomId: myRoom,
+      text: input,
+      name
+    });
 
     setInput("");
   };
 
-  // ---------------- JOIN SCREEN ----------------
-  if (!joined && !isHost) {
+  // ---------------- UI ----------------
+
+  if (screen === "home") {
     return (
-      <div className="join-container">
+      <div className="center">
 
-        <div className="join-card">
+        <h1>💬 Chat System</h1>
 
-          <h2>Join Chat Room</h2>
+        <input
+          placeholder="Enter your name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter your name"
-          />
+        <button onClick={() => setScreen("create")}>
+          Create Room
+        </button>
 
-          <button onClick={handleJoin}>
-            Request Join
-          </button>
-
-          {waiting && <p>⏳ Waiting for host approval...</p>}
-
-        </div>
+        <button onClick={() => setScreen("join")}>
+          Join Room
+        </button>
 
       </div>
     );
   }
 
-  // ---------------- HOST PANEL ----------------
-  if (isHost) {
+  if (screen === "create") {
     return (
-      <div style={{ padding: 20 }}>
+      <div className="center">
 
-        <h2>👑 You are the HOST</h2>
+        <h2>Create Room</h2>
 
-        {requests.map((r) => (
-          <div key={r.id} style={{ margin: 10 }}>
-            <b>{r.name}</b>
+        <button onClick={createRoom}>
+          Generate Room
+        </button>
 
-            <button onClick={() => approveUser(r.id)}>
-              Accept
-            </button>
+      </div>
+    );
+  }
 
-            <button onClick={() => rejectUser(r.id)}>
-              Reject
-            </button>
+  if (screen === "join") {
+    return (
+      <div className="center">
+
+        <h2>Join Room</h2>
+
+        <input
+          placeholder="Enter Room ID"
+          value={inputRoom}
+          onChange={(e) => setInputRoom(e.target.value)}
+        />
+
+        <button onClick={joinRoom}>
+          Join
+        </button>
+
+      </div>
+    );
+  }
+
+  // CHAT SCREEN
+  return (
+    <div className="chat-container">
+
+      <div className="header">
+        Room: {roomId} {isHost && "👑 Host"}
+      </div>
+
+      <div className="chat-box">
+        {messages.map((m, i) => (
+          <div key={i} className="msg">
+            <b>{m.name}:</b> {m.text}
           </div>
         ))}
+      </div>
 
-        <hr />
-
-        <div className="chat-box">
-          {messages.map((m, i) => (
-            <div key={i} className="bubble">
-              <b>{m.name}:</b> {m.text}
-            </div>
-          ))}
-        </div>
-
+      <div className="input-area">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -165,42 +168,6 @@ export default function App() {
         <button onClick={sendMessage}>
           Send
         </button>
-
-      </div>
-    );
-  }
-
-  // ---------------- NORMAL USER CHAT ----------------
-  return (
-    <div className="app">
-
-      <div className="chat-panel">
-
-        <div className="chat-header">
-          💬 Chat | 🆔 {myId}
-        </div>
-
-        <div className="chat-box">
-          {messages.map((m, i) => (
-            <div key={i} className="bubble">
-              <b>{m.name}</b>
-              <div>{m.text}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="input-area">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type message..."
-          />
-
-          <button onClick={sendMessage}>
-            Send
-          </button>
-        </div>
-
       </div>
 
     </div>
