@@ -44,7 +44,7 @@ io.on("connection", (socket) => {
 
   console.log("Connected:", socket.id);
 
-  // GET ROOMS (ONLY ACTIVE)
+  // GET ROOMS
   socket.on("get-rooms", () => {
     const activeRooms = Object.entries(rooms)
       .filter(([_, room]) => room.users.length > 0)
@@ -134,16 +134,32 @@ io.on("connection", (socket) => {
     io.emit("room-list", Object.keys(rooms));
   });
 
-  // REJECT USER
+  // ---------------- FIXED REJECT USER ----------------
   socket.on("reject-user", ({ userId }) => {
+
+    const room = Object.values(rooms).find(r =>
+      r.requests.some(u => u.id === userId)
+    );
 
     const client = io.sockets.sockets.get(userId);
 
+    if (room) {
+      room.requests = room.requests.filter(u => u.id !== userId);
+    }
+
     if (client) {
-      client.emit("system-message", {
-        name: "system",
-        text: "❌ Your join request was rejected"
+      // ✅ IMPORTANT FIX: frontend listens to "rejected"
+      client.emit("rejected", {
+        message: "Host rejected your request"
       });
+
+      // optional system message (for host room log)
+      if (room) {
+        io.to(room.host).emit("system-message", {
+          name: "system",
+          text: `${users[userId]?.name || "User"} was rejected ❌`
+        });
+      }
     }
   });
 
@@ -167,7 +183,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  // DISCONNECT (FIXED CLEANUP)
+  // DISCONNECT
   socket.on("disconnect", () => {
 
     const user = users[socket.id];
