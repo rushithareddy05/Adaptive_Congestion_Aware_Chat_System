@@ -104,11 +104,12 @@ export default function App() {
     setJoinRequests((p) => p.filter(r => r.id !== userId));
   };
 
-  /* ---------------- HOME ---------------- */
+  /* HOME */
   if (screen === "home") {
     return (
       <div className="center">
         <div className="card">
+
           <h1>💬 Chat System</h1>
 
           <input
@@ -119,12 +120,13 @@ export default function App() {
 
           <button onClick={createRoom}>Create Room</button>
           <button onClick={() => setScreen("join")}>Join Room</button>
+
         </div>
       </div>
     );
   }
 
-  /* ---------------- JOIN ---------------- */
+  /* JOIN */
   if (screen === "join") {
     return (
       <div className="center">
@@ -145,21 +147,18 @@ export default function App() {
     );
   }
 
-  /* ---------------- CHAT ---------------- */
+  /* CHAT */
   return (
     <div className="layout">
 
-      {/* LEFT DASHBOARD */}
+      {/* LEFT */}
       <div className="left">
 
         <h3>📊 Network Monitor</h3>
 
         <div className="box">Room: {roomId}</div>
         <div className="box">RTT: {rtt} ms</div>
-
-        <div className={`box ${congestion.toLowerCase()}`}>
-          Congestion: {congestion}
-        </div>
+        <div className="box">Congestion: {congestion}</div>
 
         <div className="box">Sent: {sent}</div>
         <div className="box">Received: {received}</div>
@@ -188,23 +187,16 @@ export default function App() {
 
         <RTTGraph dataPoints={rttHistory} />
 
-        {/* ADMIN */}
         {joinRequests.length > 0 && (
           <div className="adminBox">
-            <h4>👑 Join Requests</h4>
+            <h4>Join Requests</h4>
 
             {joinRequests.map((r, i) => (
               <div key={i} className="requestCard">
-                <div><b>{r.name}</b></div>
-
+                <b>{r.name}</b>
                 <div className="reqBtns">
-                  <button onClick={() => approveUser(r.id, r.roomId)} className="approve">
-                    Approve
-                  </button>
-
-                  <button onClick={() => rejectUser(r.id)} className="reject">
-                    Reject
-                  </button>
+                  <button onClick={() => approveUser(r.id, r.roomId)} className="approve">✔</button>
+                  <button onClick={() => rejectUser(r.id)} className="reject">✖</button>
                 </div>
               </div>
             ))}
@@ -213,7 +205,7 @@ export default function App() {
 
       </div>
 
-      {/* CHAT AREA */}
+      {/* CHAT */}
       <div className="right">
 
         <div className="chat">
@@ -221,13 +213,20 @@ export default function App() {
           {messages.map((m, i) => {
 
             if (m.name === "system") {
-              return <div key={i} className="system">{m.text}</div>;
+              return (
+                <div key={i} className="system">
+                  {m.text}
+                </div>
+              );
             }
 
             const isMe = m.name === name;
 
             return (
-              <div key={i} className={`msgContainer ${isMe ? "me" : "other"}`}>
+              <div
+                key={i}
+                className={`msgContainer ${isMe ? "me" : "other"}`}
+              >
                 <div className="msgBubble">
                   <div className="msgName">{m.name}</div>
                   <div className="msgText">{m.text}</div>
@@ -239,7 +238,7 @@ export default function App() {
 
         </div>
 
-        {/* INPUT BAR */}
+        {/* INPUT */}
         <div className="input">
           <input
             value={input}
