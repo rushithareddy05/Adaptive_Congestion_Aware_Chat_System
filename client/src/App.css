@@ -15,46 +15,52 @@ body {
 
 .card {
   background: #111827;
-  padding: 30px;
+  padding: 28px;
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
 .card input {
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: none;
+  outline: none;
 }
 
 .card button {
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: none;
   background: #22c55e;
   cursor: pointer;
+  font-weight: 600;
 }
 
-/* ---------------- LAYOUT ---------------- */
+/* ---------------- MAIN LAYOUT ---------------- */
 .layout {
   display: flex;
   height: 100vh;
 }
 
-/* LEFT PANEL */
+/* ---------------- LEFT PANEL (DASHBOARD) ---------------- */
 .left {
   width: 30%;
   background: #0f172a;
   padding: 20px;
   border-right: 1px solid #1e293b;
+  overflow-y: auto;
 }
 
 .box {
   background: #111827;
-  padding: 10px;
-  margin: 6px 0;
-  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 /* congestion colors */
@@ -68,7 +74,8 @@ body {
   height: 10px;
   background: #1f2937;
   border-radius: 10px;
-  margin: 10px 0;
+  margin: 12px 0;
+  overflow: hidden;
 }
 
 .fill {
@@ -80,86 +87,112 @@ body {
 /* ALERT */
 .slow {
   background: #ef4444;
-  padding: 8px;
+  padding: 10px;
   text-align: center;
-  border-radius: 8px;
+  border-radius: 10px;
+  font-weight: bold;
   animation: blink 1s infinite;
 }
 
 @keyframes blink {
-  50% { opacity: 0.4; }
+  50% { opacity: 0.5; }
 }
 
-/* ---------------- CHAT ---------------- */
+/* ---------------- RIGHT CHAT ---------------- */
 .right {
   width: 70%;
   display: flex;
   flex-direction: column;
+  background: #0b1220;
 }
 
 /* CHAT AREA */
 .chat {
   flex: 1;
-  padding: 15px;
+  padding: 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-/* MESSAGE */
-.msg {
-  max-width: 60%;
-  padding: 10px;
-  border-radius: 12px;
-}
-
-/* ME (RIGHT SIDE) */
-.me {
-  align-self: flex-end;
-  background: #22c55e;
-  color: black;
-}
-
-/* OTHERS (LEFT SIDE) */
-.other {
-  align-self: flex-start;
-  background: #1f2937;
-}
-
-.name {
-  font-size: 11px;
-  opacity: 0.7;
+  gap: 12px;
 }
 
 /* SYSTEM MESSAGE */
 .system {
   align-self: center;
   background: #334155;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
   font-size: 12px;
+  opacity: 0.8;
 }
 
-/* INPUT */
+/* ---------------- MESSAGE CONTAINER ---------------- */
+.msgContainer {
+  display: flex;
+  flex-direction: column;
+  max-width: 65%;
+}
+
+/* LEFT (others) */
+.msgContainer.left {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+/* RIGHT (you) */
+.msgContainer.right {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+/* NAME */
+.msgName {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-bottom: 3px;
+  padding: 0 4px;
+}
+
+/* BUBBLE */
+.msgBubble {
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  word-break: break-word;
+  background: #1f2937;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+}
+
+/* YOUR MESSAGE */
+.msgContainer.right .msgBubble {
+  background: #22c55e;
+  color: black;
+}
+
+/* ---------------- INPUT ---------------- */
 .input {
   display: flex;
-  padding: 10px;
+  padding: 12px;
   gap: 10px;
   background: #111827;
+  border-top: 1px solid #1e293b;
 }
 
 .input input {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
   border-radius: 20px;
   border: none;
+  outline: none;
+  background: #0f172a;
+  color: white;
 }
 
 .input button {
-  padding: 10px 16px;
+  padding: 12px 18px;
   border-radius: 20px;
   background: #22c55e;
   border: none;
   cursor: pointer;
+  font-weight: bold;
 }
