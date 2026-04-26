@@ -96,7 +96,7 @@ body {
   50% { opacity: 0.5; }
 }
 
-/* ---------------- RIGHT CHAT ---------------- */
+/* ---------------- CHAT ---------------- */
 .right {
   width: 70%;
   display: flex;
@@ -104,7 +104,6 @@ body {
   background: #0b1220;
 }
 
-/* CHAT AREA */
 .chat {
   flex: 1;
   padding: 16px;
@@ -124,34 +123,21 @@ body {
   opacity: 0.8;
 }
 
-/* ============================= */
-/* WHATSAPP MESSAGE FIX (FINAL) */
-/* ============================= */
+/* ================= CHAT BUBBLES ================= */
 
 .msgContainer {
-  width: 100%;
   display: flex;
-  flex-direction: column;
+  width: 100%;
 }
 
 /* LEFT (others) */
 .msgContainer.left {
-  align-items: flex-start;
-  align-self: flex-start;
+  justify-content: flex-start;
 }
 
-/* RIGHT (you) */
+/* RIGHT (me) */
 .msgContainer.right {
-  align-items: flex-end;
-  align-self: flex-end;
-}
-
-/* NAME */
-.msgName {
-  font-size: 11px;
-  opacity: 0.7;
-  margin-bottom: 4px;
-  padding: 0 6px;
+  justify-content: flex-end;
 }
 
 /* BUBBLE */
@@ -159,22 +145,43 @@ body {
   max-width: 60%;
   padding: 10px 14px;
   border-radius: 14px;
-  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   word-break: break-word;
 }
 
-/* OTHER USERS */
+/* OTHERS (dark grey) */
 .msgContainer.left .msgBubble {
   background: #1f2937;
   color: white;
   border-bottom-left-radius: 4px;
 }
 
-/* YOUR MESSAGES */
+/* ME (green) */
 .msgContainer.right .msgBubble {
   background: #22c55e;
   color: black;
   border-bottom-right-radius: 4px;
+}
+
+/* NAME POSITION FIX */
+.msgName {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.msgContainer.left .msgName {
+  align-self: flex-start;
+}
+
+.msgContainer.right .msgName {
+  align-self: flex-end;
+}
+
+/* MESSAGE TEXT */
+.msgText {
+  font-size: 14px;
 }
 
 /* ---------------- INPUT ---------------- */
