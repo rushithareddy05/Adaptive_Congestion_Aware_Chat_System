@@ -5,29 +5,43 @@ import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
 
 const app = express();
-
-app.use(cors({
-  origin: "*"
-}));
+app.use(cors({ origin: "*" }));
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: "*"
-  }
+  cors: { origin: "*" }
 });
 
-// ---------------- DATA STORAGE ----------------
-const rooms = {}; 
-// roomId: { host, users: [], requests: [] }
+// ---------------- STATE ----------------
+const rooms = {};
+// roomId: {
+//   host,
+//   hostName,
+//   users: [{id,name}],
+//   requests: [{id,name}]
+// }
+
+// ---------------- HELPERS ----------------
+const getRTT = () => Math.floor(Math.random() * 250) + 50;
+
+const getCongestion = (rtt) => {
+  if (rtt < 120) return "LOW";
+  if (rtt < 220) return "MEDIUM";
+  return "HIGH";
+};
 
 // ---------------- SOCKET ----------------
 io.on("connection", (socket) => {
 
-  console.log("User connected:", socket.id);
+  console.log("Connected:", socket.id);
 
-  // CREATE ROOM
+  // 📡 ROOM LIST
+  socket.on("get-rooms", () => {
+    socket.emit("room-list", Object.keys(rooms));
+  });
+
+  // 🏗 CREATE ROOM (HOST)
   socket.on("create-room", ({ name }, cb) => {
 
     const roomId = uuidv4().slice(0, 6);
@@ -41,45 +55,51 @@ io.on("connection", (socket) => {
 
     socket.join(roomId);
 
-    cb({ roomId });
+    cb?.({ roomId });
 
     io.emit("room-list", Object.keys(rooms));
+
+    io.to(roomId).emit("system-message", {
+      name: "system",
+      text: `${name} created the room`
+    });
+
   });
 
-  // GET ROOMS
-  socket.on("get-rooms", () => {
-    socket.emit("room-list", Object.keys(rooms));
-  });
-
-  // JOIN REQUEST
+  // 🚪 JOIN ROOM REQUEST
   socket.on("join-room", ({ roomId, name }, cb) => {
 
     const room = rooms[roomId];
-    if (!room) return cb({ error: "Room not found" });
+    if (!room) return cb?.({ error: "Room not found" });
 
     if (room.users.length >= 10) {
-      return cb({ error: "Room full (max 10 users)" });
+      return cb?.({ error: "Room full (max 10 users)" });
     }
 
-    if (room.host === socket.id) {
-      room.users.push({ id: socket.id, name });
-      socket.join(roomId);
-      return cb({ roomId });
+    // host joins directly (creator already handled anyway)
+    if (socket.id === room.host) {
+      return cb?.({ roomId });
     }
 
-    // send request to host
+    // prevent duplicate requests
+    const alreadyRequested = room.requests.find(r => r.id === socket.id);
+    if (alreadyRequested) {
+      return cb?.({ status: "already_requested" });
+    }
+
     room.requests.push({ id: socket.id, name });
 
     io.to(room.host).emit("join-request", {
       id: socket.id,
-      name
+      name,
+      roomId
     });
 
-    cb({ status: "pending" });
+    cb?.({ status: "pending" });
 
   });
 
-  // HOST APPROVE
+  // ✅ APPROVE USER
   socket.on("approve-user", ({ roomId, userId }) => {
 
     const room = rooms[roomId];
@@ -89,33 +109,35 @@ io.on("connection", (socket) => {
     if (!user) return;
 
     room.requests = room.requests.filter(u => u.id !== userId);
-
     room.users.push(user);
 
-    io.to(userId).emit("join-approved", { roomId });
+    const clientSocket = io.sockets.sockets.get(userId);
 
-    io.sockets.sockets.get(userId)?.join(roomId);
+    if (clientSocket) {
+      clientSocket.join(roomId);
 
-    io.to(roomId).emit("system-message", {
-      name: "system",
-      text: `${user.name} joined the room`
-    });
+      clientSocket.emit("join-approved", { roomId });
+
+      io.to(roomId).emit("system-message", {
+        name: "system",
+        text: `${user.name} joined the room`
+      });
+    }
 
   });
 
-  // HOST REJECT
+  // ❌ REJECT USER
   socket.on("reject-user", ({ userId }) => {
     io.to(userId).emit("join-rejected", "Access denied by host");
   });
 
-  // MESSAGE
+  // 💬 MESSAGE
   socket.on("send-message", ({ roomId, text, name }) => {
 
-    const rtt = Math.floor(Math.random() * 200) + 50;
+    if (!rooms[roomId]) return;
 
-    let congestion = "LOW";
-    if (rtt > 150) congestion = "MEDIUM";
-    if (rtt > 250) congestion = "HIGH";
+    const rtt = getRTT();
+    const congestion = getCongestion(rtt);
 
     io.to(roomId).emit("receive-message", {
       name,
@@ -126,9 +148,29 @@ io.on("connection", (socket) => {
 
   });
 
-  // DISCONNECT
+  // 🔌 DISCONNECT CLEANUP
   socket.on("disconnect", () => {
+
     console.log("Disconnected:", socket.id);
+
+    for (const roomId in rooms) {
+
+      const room = rooms[roomId];
+
+      room.users = room.users.filter(u => u.id !== socket.id);
+      room.requests = room.requests.filter(r => r.id !== socket.id);
+
+      if (room.host === socket.id) {
+        io.to(roomId).emit("system-message", {
+          name: "system",
+          text: "Host disconnected. Room closed."
+        });
+
+        delete rooms[roomId];
+        io.emit("room-list", Object.keys(rooms));
+      }
+    }
+
   });
 
 });
