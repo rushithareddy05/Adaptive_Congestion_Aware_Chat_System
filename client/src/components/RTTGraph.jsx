@@ -5,25 +5,27 @@ export default function RTTGraph({ dataPoints = [] }) {
   return (
     <div style={{ marginTop: "10px" }}>
       
+      {/* TITLE */}
       <div style={{ fontSize: "12px", marginBottom: "5px" }}>
         RTT Trend
       </div>
 
-      {/* GRAPH AREA */}
+      {/* WRAPPER */}
       <div style={{ position: "relative" }}>
 
-        {/* Y-axis labels */}
+        {/* Y AXIS */}
         <div
           style={{
             position: "absolute",
-            left: "-35px",
+            left: "0",
             top: "0",
             height: "80px",
+            width: "35px",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
             fontSize: "10px",
-            opacity: 0.7
+            opacity: 0.7,
           }}
         >
           <span>{max}</span>
@@ -31,7 +33,7 @@ export default function RTTGraph({ dataPoints = [] }) {
           <span>0</span>
         </div>
 
-        {/* bars */}
+        {/* GRAPH */}
         <div
           style={{
             display: "flex",
@@ -41,7 +43,7 @@ export default function RTTGraph({ dataPoints = [] }) {
             background: "#0f1a22",
             padding: "5px",
             borderRadius: "8px",
-            marginLeft: "40px"
+            marginLeft: "40px",
           }}
         >
           {safeData.map((v, i) => (
@@ -58,13 +60,13 @@ export default function RTTGraph({ dataPoints = [] }) {
                     ? "#facc15"
                     : "#ef4444",
                 borderRadius: "2px",
-                transition: "height 0.2s"
+                transition: "height 0.2s ease",
               }}
             />
           ))}
         </div>
 
-        {/* X-axis label */}
+        {/* X AXIS */}
         <div
           style={{
             marginLeft: "40px",
@@ -73,7 +75,7 @@ export default function RTTGraph({ dataPoints = [] }) {
             opacity: 0.7,
             display: "flex",
             justifyContent: "space-between",
-            width: "100%"
+            width: "calc(100% - 40px)",
           }}
         >
           <span>Old</span>
