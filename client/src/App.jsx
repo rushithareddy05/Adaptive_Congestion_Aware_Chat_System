@@ -144,7 +144,7 @@ export default function App() {
     return (
       <div className="center">
         <div className="homeCard">
-          <div className="logoTitle">💬 Chat</div>
+          <div className="logoTitle">💬 RelayHub</div>
 
           <div className="subText">
             Real-Time Congestion-Aware Chat System
