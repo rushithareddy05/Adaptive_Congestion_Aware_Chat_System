@@ -252,49 +252,48 @@ body {
   padding: 5px 8px;
 }
 
+/* ---------- SLOW MODE FIX ---------- */
+
 .slowMode {
-  animation: slowPulse 1.2s infinite;
+  position: relative;
 }
 
-/* soft red warning glow */
-@keyframes slowPulse {
-  0% {
-    box-shadow: inset 0 0 0 rgba(255, 0, 0, 0);
-  }
-
-  50% {
-    box-shadow: inset 0 0 120px rgba(255, 60, 60, 0.18);
-  }
-
-  100% {
-    box-shadow: inset 0 0 0 rgba(255, 0, 0, 0);
-  }
-}
-
-/* optional: stronger "danger mode" feel */
-.slowMode .right {
-  transition: background 0.3s ease;
+.slowMode::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 0, 0, 0.08);
+  pointer-events: none;
+  animation: pulseOverlay 1.2s infinite;
+  z-index: 999;
 }
 
 .slowMode .right {
-  background: rgba(255, 0, 0, 0.05) !important;
+  background: #120608 !important;
 }
 
-/* optional warning text effect (if you add later) */
 .slowModeWarning {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+  position: fixed;
+  top: 15px;
+  right: 15px;
   background: red;
   color: white;
-  padding: 6px 10px;
-  font-size: 11px;
+  padding: 8px 12px;
+  font-size: 12px;
   border-radius: 6px;
-  animation: blink 1s infinite;
+  z-index: 1000;
+  animation: blink 0.8s infinite;
+}
+
+@keyframes pulseOverlay {
+  0% { opacity: 0.05; }
+  50% { opacity: 0.15; }
+  100% { opacity: 0.05; }
 }
 
 @keyframes blink {
-  50% {
-    opacity: 0.3;
-  }
+  50% { opacity: 0.3; }
 }
