@@ -88,12 +88,11 @@ export default function App() {
     setInput("");
   };
 
-  /* ---------------- HOME ---------------- */
+  /* HOME */
   if (screen === "home") {
     return (
       <div className="center">
         <div className="card">
-
           <h1>💬 Chat System</h1>
 
           <input
@@ -104,13 +103,12 @@ export default function App() {
 
           <button onClick={createRoom}>Create Room</button>
           <button onClick={() => setScreen("join")}>Join Room</button>
-
         </div>
       </div>
     );
   }
 
-  /* ---------------- JOIN ---------------- */
+  /* JOIN */
   if (screen === "join") {
     return (
       <div className="center">
@@ -133,7 +131,7 @@ export default function App() {
     );
   }
 
-  /* ---------------- CHAT ---------------- */
+  /* CHAT */
   return (
     <div className="layout">
 
@@ -198,13 +196,8 @@ export default function App() {
                 className={`msgContainer ${isMe ? "right" : "left"}`}
               >
                 <div className="msgBubble">
-
-                  <div className="msgHeader">
-                    <span className="msgName">{m.name}</span>
-                  </div>
-
+                  <div className="msgName">{m.name}</div>
                   <div className="msgText">{m.text}</div>
-
                 </div>
               </div>
             );
