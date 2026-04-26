@@ -2,9 +2,9 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import { v4 as uuidv4 } from "uuid";
 
 const app = express();
+
 app.use(cors({ origin: "*" }));
 
 const server = http.createServer(app);
@@ -13,16 +13,13 @@ const io = new Server(server, {
   cors: { origin: "*" }
 });
 
-// ---------------- STATE ----------------
+// ---------------- ROOMS ----------------
 const rooms = {};
-// roomId: {
-//   host,
-//   hostName,
-//   users: [{id,name}],
-//   requests: [{id,name}]
-// }
 
 // ---------------- HELPERS ----------------
+const generateRoomId = () =>
+  Math.random().toString(36).substring(2, 8);
+
 const getRTT = () => Math.floor(Math.random() * 250) + 50;
 
 const getCongestion = (rtt) => {
@@ -36,7 +33,7 @@ io.on("connection", (socket) => {
 
   console.log("Connected:", socket.id);
 
-  // 📡 ROOM LIST
+  // 📡 SEND ROOM LIST
   socket.on("get-rooms", () => {
     socket.emit("room-list", Object.keys(rooms));
   });
@@ -44,7 +41,7 @@ io.on("connection", (socket) => {
   // 🏗 CREATE ROOM (HOST)
   socket.on("create-room", ({ name }, cb) => {
 
-    const roomId = uuidv4().slice(0, 6);
+    const roomId = generateRoomId();
 
     rooms[roomId] = {
       host: socket.id,
@@ -66,25 +63,26 @@ io.on("connection", (socket) => {
 
   });
 
-  // 🚪 JOIN ROOM REQUEST
+  // 🚪 JOIN ROOM
   socket.on("join-room", ({ roomId, name }, cb) => {
 
     const room = rooms[roomId];
+
     if (!room) return cb?.({ error: "Room not found" });
 
     if (room.users.length >= 10) {
       return cb?.({ error: "Room full (max 10 users)" });
     }
 
-    // host joins directly (creator already handled anyway)
-    if (socket.id === room.host) {
-      return cb?.({ roomId });
-    }
-
     // prevent duplicate requests
     const alreadyRequested = room.requests.find(r => r.id === socket.id);
     if (alreadyRequested) {
       return cb?.({ status: "already_requested" });
+    }
+
+    // host joins directly
+    if (socket.id === room.host) {
+      return cb?.({ roomId });
     }
 
     room.requests.push({ id: socket.id, name });
@@ -131,10 +129,11 @@ io.on("connection", (socket) => {
     io.to(userId).emit("join-rejected", "Access denied by host");
   });
 
-  // 💬 MESSAGE
+  // 💬 SEND MESSAGE
   socket.on("send-message", ({ roomId, text, name }) => {
 
-    if (!rooms[roomId]) return;
+    const room = rooms[roomId];
+    if (!room) return;
 
     const rtt = getRTT();
     const congestion = getCongestion(rtt);
@@ -148,7 +147,7 @@ io.on("connection", (socket) => {
 
   });
 
-  // 🔌 DISCONNECT CLEANUP
+  // 🔌 DISCONNECT HANDLING
   socket.on("disconnect", () => {
 
     console.log("Disconnected:", socket.id);
@@ -160,7 +159,9 @@ io.on("connection", (socket) => {
       room.users = room.users.filter(u => u.id !== socket.id);
       room.requests = room.requests.filter(r => r.id !== socket.id);
 
+      // if host leaves → delete room
       if (room.host === socket.id) {
+
         io.to(roomId).emit("system-message", {
           name: "system",
           text: "Host disconnected. Room closed."
@@ -170,11 +171,11 @@ io.on("connection", (socket) => {
         io.emit("room-list", Object.keys(rooms));
       }
     }
-
   });
 
 });
 
-server.listen(5000, () => { 
+// ---------------- START SERVER ----------------
+server.listen(5000, () => {
   console.log("Server running on port 5000");
 });
