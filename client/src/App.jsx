@@ -11,7 +11,6 @@ export default function App() {
   const [roomId, setRoomId] = useState("");
 
   const [rooms, setRooms] = useState([]);
-
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
@@ -24,11 +23,17 @@ export default function App() {
   const [received, setReceived] = useState(0);
   const [lost, setLost] = useState(0);
 
+  const [joinRequests, setJoinRequests] = useState([]);
+
   useEffect(() => {
 
     socket.emit("get-rooms");
 
     socket.on("room-list", setRooms);
+
+    socket.on("join-request", (data) => {
+      setJoinRequests((p) => [...p, data]);
+    });
 
     socket.on("receive-message", (msg) => {
       setMessages((p) => [...p, msg]);
@@ -48,6 +53,7 @@ export default function App() {
       socket.off("room-list");
       socket.off("receive-message");
       socket.off("system-message");
+      socket.off("join-request");
     };
 
   }, []);
@@ -68,6 +74,7 @@ export default function App() {
   };
 
   const sendMessage = () => {
+
     if (!input.trim()) return;
 
     setSent((p) => p + 1);
@@ -88,11 +95,21 @@ export default function App() {
     setInput("");
   };
 
-  /* HOME */
+  const approveUser = (userId, roomId) => {
+    socket.emit("approve-user", { userId, roomId });
+    setJoinRequests((p) => p.filter(r => r.id !== userId));
+  };
+
+  const rejectUser = (userId) => {
+    socket.emit("reject-user", { userId });
+    setJoinRequests((p) => p.filter(r => r.id !== userId));
+  };
+
   if (screen === "home") {
     return (
       <div className="center">
         <div className="card">
+
           <h1>💬 Chat System</h1>
 
           <input
@@ -103,20 +120,18 @@ export default function App() {
 
           <button onClick={createRoom}>Create Room</button>
           <button onClick={() => setScreen("join")}>Join Room</button>
+
         </div>
       </div>
     );
   }
 
-  /* JOIN */
   if (screen === "join") {
     return (
       <div className="center">
         <div className="card">
 
           <h2>Rooms</h2>
-
-          {rooms.length === 0 && <p>No rooms available</p>}
 
           {rooms.map((r, i) => (
             <button key={i} onClick={() => joinRoom(r)}>
@@ -131,11 +146,10 @@ export default function App() {
     );
   }
 
-  /* CHAT */
   return (
     <div className="layout">
 
-      {/* LEFT DASHBOARD */}
+      {/* LEFT */}
       <div className="left">
 
         <h3>📊 Network Monitor</h3>
@@ -152,28 +166,37 @@ export default function App() {
         <div className="box">Packet Loss: {lost}</div>
 
         <div className="bar">
-          <div
-            className="fill"
-            style={{
-              width:
-                congestion === "LOW"
-                  ? "30%"
-                  : congestion === "MEDIUM"
-                  ? "60%"
-                  : "90%"
-            }}
-          />
+          <div className="fill" />
         </div>
 
         <RTTGraph dataPoints={rttHistory} />
 
-        {congestion === "HIGH" && (
-          <div className="slow">⚠ Slow Mode Active</div>
+        {/* 👑 ADMIN PANEL */}
+        {joinRequests.length > 0 && (
+          <div className="adminBox">
+            <h4>👑 Join Requests</h4>
+
+            {joinRequests.map((r, i) => (
+              <div key={i} className="requestCard">
+                <div><b>{r.name}</b></div>
+
+                <div className="reqBtns">
+                  <button onClick={() => approveUser(r.id, r.roomId)} className="approve">
+                    Approve
+                  </button>
+
+                  <button onClick={() => rejectUser(r.id)} className="reject">
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
       </div>
 
-      {/* RIGHT CHAT */}
+      {/* CHAT */}
       <div className="right">
 
         <div className="chat">
@@ -181,20 +204,13 @@ export default function App() {
           {messages.map((m, i) => {
 
             if (m.name === "system") {
-              return (
-                <div key={i} className="system">
-                  {m.text}
-                </div>
-              );
+              return <div key={i} className="system">{m.text}</div>;
             }
 
             const isMe = m.name === name;
 
             return (
-              <div
-                key={i}
-                className={`msgContainer ${isMe ? "right" : "left"}`}
-              >
+              <div key={i} className={`msgContainer ${isMe ? "right" : "left"}`}>
                 <div className="msgBubble">
                   <div className="msgName">{m.name}</div>
                   <div className="msgText">{m.text}</div>
@@ -207,11 +223,7 @@ export default function App() {
         </div>
 
         <div className="input">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type message..."
-          />
+          <input value={input} onChange={(e) => setInput(e.target.value)} />
           <button onClick={sendMessage}>Send</button>
         </div>
 
