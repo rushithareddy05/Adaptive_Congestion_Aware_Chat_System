@@ -52,12 +52,13 @@ export default function App() {
       setCongestion(msg.congestion);
       setRttHistory((p) => [...p.slice(-20), msg.rtt]);
 
-      // ---------------- 🔥 FIXED SLOW MODE LOGIC ----------------
+      // ---------------- SLOW MODE ----------------
       if (msg.rtt > 200) {
         setSlowMode(true);
 
-        // keep glow visible for 2.5s even if RTT drops
-        setTimeout(() => {
+        clearTimeout(window.__slowModeTimer);
+
+        window.__slowModeTimer = setTimeout(() => {
           setSlowMode(false);
         }, 2500);
       }
@@ -136,7 +137,6 @@ export default function App() {
     return (
       <div className="center">
         <div className="homeCard">
-
           <div className="logoTitle">💬 Chat</div>
 
           <div className="subText">
@@ -164,7 +164,6 @@ export default function App() {
               <div className="desc">Join existing room</div>
             </div>
           </div>
-
         </div>
       </div>
     );
@@ -175,7 +174,6 @@ export default function App() {
     return (
       <div className="center">
         <div className="homeCard">
-
           <div className="logoTitle">📡 Rooms</div>
 
           {rooms.length === 0 && (
@@ -191,7 +189,6 @@ export default function App() {
           <div className="actionCard back" onClick={() => setScreen("home")}>
             ← Back
           </div>
-
         </div>
       </div>
     );
@@ -200,7 +197,6 @@ export default function App() {
   // ---------------- CHAT ----------------
   return (
     <div className={`layout ${slowMode ? "slowMode" : ""}`}>
-
       <div className="left">
         <h3>📊 Network Monitor</h3>
 
@@ -253,7 +249,6 @@ export default function App() {
 
       <div className="right">
         <div className="chat">
-
           {messages.map((m, i) => {
             if (m.name === "system") {
               return (
@@ -274,7 +269,6 @@ export default function App() {
               </div>
             );
           })}
-
         </div>
 
         <div className="input">
@@ -285,9 +279,7 @@ export default function App() {
           />
           <button onClick={sendMessage}>Send</button>
         </div>
-
       </div>
-
     </div>
   );
 }
