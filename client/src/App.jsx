@@ -13,157 +13,154 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
+  const [requests, setRequests] = useState([]);
+
   const [rtt, setRtt] = useState(0);
   const [congestion, setCongestion] = useState("LOW");
 
-  // 📡 GET ROOM LIST
+  // SOCKET
   useEffect(() => {
 
     socket.emit("get-rooms");
 
-    socket.on("room-list", (list) => {
-      setRooms(list);
+    socket.on("room-list", setRooms);
+
+    socket.on("join-request", (user) => {
+      setRequests((prev) => [...prev, user]);
     });
 
     socket.on("receive-message", (msg) => {
-
       setMessages((prev) => [...prev, msg]);
-
       setRtt(msg.rtt);
       setCongestion(msg.congestion);
-
     });
 
     socket.on("system-message", (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
 
-    return () => {
-      socket.off("room-list");
-      socket.off("receive-message");
-      socket.off("system-message");
-    };
-
   }, []);
 
   // CREATE ROOM
   const createRoom = () => {
-
     socket.emit("create-room", { name }, (res) => {
       setRoomId(res.roomId);
       setScreen("chat");
     });
-
   };
 
   // JOIN ROOM
   const joinRoom = (id) => {
-
     socket.emit("join-room", { roomId: id, name }, (res) => {
-
       if (res.error) return alert(res.error);
-
-      setRoomId(res.roomId);
-      setScreen("chat");
-
+      if (res.status === "pending") alert("Waiting for host...");
+      if (res.roomId) {
+        setRoomId(res.roomId);
+        setScreen("chat");
+      }
     });
-
   };
 
-  // SEND MESSAGE
-  const sendMessage = () => {
+  // APPROVE
+  const approve = (user) => {
+    socket.emit("approve-user", {
+      roomId,
+      userId: user.id
+    });
+    setRequests((r) => r.filter(x => x.id !== user.id));
+  };
 
+  // REJECT
+  const reject = (user) => {
+    socket.emit("reject-user", {
+      userId: user.id
+    });
+    setRequests((r) => r.filter(x => x.id !== user.id));
+  };
+
+  // SEND
+  const sendMessage = () => {
     socket.emit("send-message", {
       roomId,
       text: input,
       name
     });
-
     setInput("");
   };
 
-  // ---------------- UI ----------------
-
+  // HOME
   if (screen === "home") {
     return (
       <div className="center">
+        <h1>Chat System</h1>
 
-        <h1>💬 Chat System</h1>
+        <input value={name} onChange={(e) => setName(e.target.value)} />
 
-        <input
-          placeholder="Enter name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <button onClick={createRoom}>
-          Create Room
-        </button>
+        <button onClick={createRoom}>Create Room</button>
 
         <button onClick={() => setScreen("join")}>
           Join Room
         </button>
-
       </div>
     );
   }
 
-  // ROOM LIST SCREEN
+  // JOIN SCREEN
   if (screen === "join") {
     return (
       <div className="center">
+        <h2>Rooms</h2>
 
-        <h2>Available Rooms</h2>
-
-        {rooms.length === 0 && <p>No rooms available</p>}
-
-        {rooms.map((r, i) => (
-          <button key={i} onClick={() => joinRoom(r)}>
+        {rooms.map((r) => (
+          <button key={r} onClick={() => joinRoom(r)}>
             Join {r}
           </button>
         ))}
-
-        <button onClick={() => setScreen("home")}>
-          Back
-        </button>
-
       </div>
     );
   }
 
-  // CHAT SCREEN
+  // CHAT
   return (
-    <div className="chat-container">
+    <div className="layout">
 
-      <div className="header">
-        Room: {roomId}
-      </div>
+      {/* LEFT DASHBOARD */}
+      <div className="left-panel">
 
-      <div className="status">
-        RTT: {rtt} ms | Congestion: {congestion}
-      </div>
+        <h3>Room: {roomId}</h3>
+        <p>RTT: {rtt}</p>
+        <p>Congestion: {congestion}</p>
 
-      <div className="chat-box">
-
-        {messages.map((m, i) => (
-          <div key={i} className="msg-wrapper">
-            <div className="msg-name">{m.name}</div>
-            <div className="msg-bubble">{m.text}</div>
+        {/* HOST REQUEST PANEL */}
+        {requests.map((u) => (
+          <div key={u.id}>
+            {u.name}
+            <button onClick={() => approve(u)}>✔</button>
+            <button onClick={() => reject(u)}>✖</button>
           </div>
         ))}
 
       </div>
 
-      <div className="input-area">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="message..."
-        />
+      {/* CHAT */}
+      <div className="chat-panel">
 
-        <button onClick={sendMessage}>
-          Send
-        </button>
+        <div className="chat-box">
+
+          {messages.map((m, i) => (
+            <div key={i} className={`msg ${m.name === name ? "me" : "other"}`}>
+              <div className="msg-name">{m.name}</div>
+              {m.text}
+            </div>
+          ))}
+
+        </div>
+
+        <div className="input-area">
+          <input value={input} onChange={(e) => setInput(e.target.value)} />
+          <button onClick={sendMessage}>Send</button>
+        </div>
+
       </div>
 
     </div>
