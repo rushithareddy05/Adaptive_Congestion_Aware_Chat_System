@@ -68,7 +68,6 @@ export default function App() {
   };
 
   const sendMessage = () => {
-
     if (!input.trim()) return;
 
     setSent((p) => p + 1);
@@ -89,11 +88,12 @@ export default function App() {
     setInput("");
   };
 
-  // HOME
+  /* ---------------- HOME ---------------- */
   if (screen === "home") {
     return (
       <div className="center">
         <div className="card">
+
           <h1>💬 Chat System</h1>
 
           <input
@@ -103,16 +103,14 @@ export default function App() {
           />
 
           <button onClick={createRoom}>Create Room</button>
+          <button onClick={() => setScreen("join")}>Join Room</button>
 
-          <button onClick={() => setScreen("join")}>
-            Join Room
-          </button>
         </div>
       </div>
     );
   }
 
-  // JOIN
+  /* ---------------- JOIN ---------------- */
   if (screen === "join") {
     return (
       <div className="center">
@@ -128,16 +126,14 @@ export default function App() {
             </button>
           ))}
 
-          <button onClick={() => setScreen("home")}>
-            Back
-          </button>
+          <button onClick={() => setScreen("home")}>Back</button>
 
         </div>
       </div>
     );
   }
 
-  // CHAT
+  /* ---------------- CHAT ---------------- */
   return (
     <div className="layout">
 
@@ -186,8 +182,6 @@ export default function App() {
 
           {messages.map((m, i) => {
 
-            const isMe = m.name === name;
-
             if (m.name === "system") {
               return (
                 <div key={i} className="system">
@@ -196,6 +190,8 @@ export default function App() {
               );
             }
 
+            const isMe = m.name === name;
+
             return (
               <div
                 key={i}
@@ -203,13 +199,11 @@ export default function App() {
               >
                 <div className="msgBubble">
 
-                  <div className="msgName">
-                    {m.name}
+                  <div className="msgHeader">
+                    <span className="msgName">{m.name}</span>
                   </div>
 
-                  <div className="msgText">
-                    {m.text}
-                  </div>
+                  <div className="msgText">{m.text}</div>
 
                 </div>
               </div>
