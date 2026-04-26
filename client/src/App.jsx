@@ -17,6 +17,7 @@ export default function App() {
   const [rtt, setRtt] = useState(0);
 
   const [waiting, setWaiting] = useState(false);
+  const [rejected, setRejected] = useState(false); // ✅ ADDED
 
   const [congestion, setCongestion] = useState("LOW");
   const [slowMode, setSlowMode] = useState(false);
@@ -43,8 +44,19 @@ export default function App() {
 
     const handleApproved = ({ roomId }) => {
       setWaiting(false);
+      setRejected(false);
       setRoomId(roomId);
       setScreen("chat");
+    };
+
+    // ✅ ADDED REJECT HANDLER
+    const handleRejected = () => {
+      setWaiting(false);
+      setRejected(true);
+
+      setTimeout(() => {
+        setRejected(false);
+      }, 3000);
     };
 
     const handleMessage = (msg) => {
@@ -73,6 +85,7 @@ export default function App() {
     socket.on("room-list", handleRoomList);
     socket.on("join-request", handleJoinRequest);
     socket.on("approved", handleApproved);
+    socket.on("rejected", handleRejected); // ✅ ADDED
     socket.on("receive-message", handleMessage);
     socket.on("system-message", handleSystem);
 
@@ -80,6 +93,7 @@ export default function App() {
       socket.off("room-list", handleRoomList);
       socket.off("join-request", handleJoinRequest);
       socket.off("approved", handleApproved);
+      socket.off("rejected", handleRejected); // ✅ ADDED
       socket.off("receive-message", handleMessage);
       socket.off("system-message", handleSystem);
     };
@@ -97,6 +111,7 @@ export default function App() {
   // ---------------- JOIN ROOM ----------------
   const joinRoom = (id) => {
     setWaiting(true);
+    setRejected(false); // reset
 
     socket.emit("join-room", { roomId: id, name }, (res) => {
       if (res?.error) {
@@ -196,6 +211,12 @@ export default function App() {
           {waiting && (
             <div className="subText" style={{ color: "#facc15" }}>
               ⏳ Waiting for host approval...
+            </div>
+          )}
+
+          {rejected && (
+            <div className="subText" style={{ color: "#ef4444" }}>
+              ❌ Host rejected your request
             </div>
           )}
 
