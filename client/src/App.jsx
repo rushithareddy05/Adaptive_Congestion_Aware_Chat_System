@@ -22,6 +22,7 @@ export default function App() {
   const [congestion, setCongestion] = useState("LOW");
   const [slowMode, setSlowMode] = useState(false);
 
+  // ✅ NEW STATES FOR REAL SLOW MODE
   const [isBlocked, setIsBlocked] = useState(false);
   const [slowMsg, setSlowMsg] = useState("");
 
@@ -30,9 +31,6 @@ export default function App() {
   const [lost, setLost] = useState(0);
 
   const [joinRequests, setJoinRequests] = useState([]);
-
-  // ✅ NEW
-  const [roomUsers, setRoomUsers] = useState([]);
 
   // ---------------- SOCKET SETUP ----------------
   useEffect(() => {
@@ -58,7 +56,10 @@ export default function App() {
     const handleRejected = () => {
       setWaiting(false);
       setRejected(true);
-      setTimeout(() => setRejected(false), 3000);
+
+      setTimeout(() => {
+        setRejected(false);
+      }, 3000);
     };
 
     const handleMessage = (msg) => {
@@ -71,7 +72,9 @@ export default function App() {
 
       if (msg.rtt > 200) {
         setSlowMode(true);
+
         clearTimeout(window.__slowModeTimer);
+
         window.__slowModeTimer = setTimeout(() => {
           setSlowMode(false);
         }, 2500);
@@ -82,7 +85,10 @@ export default function App() {
       setMessages((p) => [...p, msg]);
     };
 
+    // ✅ NEW: HANDLE BACKEND SLOW MODE
     const handleSlowMode = (data) => {
+      console.log("SLOW MODE:", data);
+
       setIsBlocked(true);
       setSlowMsg(data.message || "Slow mode active");
 
@@ -92,31 +98,13 @@ export default function App() {
       }, 3000);
     };
 
-    // ✅ NEW
-    const handleRoomUsers = (users) => setRoomUsers(users);
-
-    const handleKicked = (data) => {
-      alert(data.message || "Removed by host");
-      setScreen("home");
-    };
-
-    const handleBanned = (data) => {
-      alert(data.message || "You are banned");
-      setScreen("home");
-    };
-
     socket.on("room-list", handleRoomList);
     socket.on("join-request", handleJoinRequest);
     socket.on("approved", handleApproved);
     socket.on("rejected", handleRejected);
     socket.on("receive-message", handleMessage);
     socket.on("system-message", handleSystem);
-    socket.on("slow-mode", handleSlowMode);
-
-    // ✅ NEW
-    socket.on("room-users", handleRoomUsers);
-    socket.on("kicked", handleKicked);
-    socket.on("banned", handleBanned);
+    socket.on("slow-mode", handleSlowMode); // ✅ NEW
 
     return () => {
       socket.off("room-list", handleRoomList);
@@ -125,15 +113,11 @@ export default function App() {
       socket.off("rejected", handleRejected);
       socket.off("receive-message", handleMessage);
       socket.off("system-message", handleSystem);
-      socket.off("slow-mode", handleSlowMode);
-
-      socket.off("room-users", handleRoomUsers);
-      socket.off("kicked", handleKicked);
-      socket.off("banned", handleBanned);
+      socket.off("slow-mode", handleSlowMode); // ✅ NEW
     };
   }, []);
 
-  // ---------------- ACTIONS ----------------
+  // ---------------- CREATE ROOM ----------------
   const createRoom = () => {
     socket.emit("create-room", { name }, (res) => {
       if (!res?.roomId) return;
@@ -142,6 +126,7 @@ export default function App() {
     });
   };
 
+  // ---------------- JOIN ROOM ----------------
   const joinRoom = (id) => {
     setWaiting(true);
     setRejected(false);
@@ -149,13 +134,14 @@ export default function App() {
     socket.emit("join-room", { roomId: id, name }, (res) => {
       if (res?.error) {
         setWaiting(false);
-        alert(res.error);
+        return alert(res.error);
       }
     });
   };
 
+  // ---------------- SEND MESSAGE ----------------
   const sendMessage = () => {
-    if (!input.trim() || isBlocked) return;
+    if (!input.trim() || isBlocked) return; // ✅ BLOCK WHEN SLOW MODE
 
     setSent((p) => p + 1);
 
@@ -166,10 +152,16 @@ export default function App() {
       return;
     }
 
-    socket.emit("send-message", { roomId, text: input, name });
+    socket.emit("send-message", {
+      roomId,
+      text: input,
+      name,
+    });
+
     setInput("");
   };
 
+  // ---------------- APPROVE ----------------
   const approveUser = (userId, roomId) => {
     socket.emit("approve-user", { userId, roomId });
     setJoinRequests((p) => p.filter((r) => r.id !== userId));
@@ -180,14 +172,79 @@ export default function App() {
     setJoinRequests((p) => p.filter((r) => r.id !== userId));
   };
 
-  // ✅ NEW
-  const kickUser = (userId) => {
-    socket.emit("kick-user", { roomId, userId });
-  };
+  // ---------------- HOME ----------------
+  if (screen === "home") {
+    return (
+      <div className="center">
+        <div className="homeCard">
+          <div className="logoTitle">💬 RelayHub</div>
 
-  const banUser = (userId) => {
-    socket.emit("ban-user", { roomId, userId });
-  };
+          <div className="subText">
+            Real-Time Congestion-Aware Chat System
+          </div>
+
+          <input
+            placeholder="Enter your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+
+          <div className="actionCard create" onClick={createRoom}>
+            <div className="icon">🔮</div>
+            <div>
+              <div className="title">Create Room</div>
+              <div className="desc">Start new chat session</div>
+            </div>
+          </div>
+
+          <div className="actionCard join" onClick={() => setScreen("join")}>
+            <div className="icon">🏃‍♂️‍➡️</div>
+            <div>
+              <div className="title">Join Room</div>
+              <div className="desc">Join existing room</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------- JOIN ----------------
+  if (screen === "join") {
+    return (
+      <div className="center">
+        <div className="homeCard">
+          <div className="logoTitle">📡 Rooms</div>
+
+          {rooms.length === 0 && (
+            <div className="subText">No active rooms</div>
+          )}
+
+          {rooms.map((r, i) => (
+            <div key={i} className="roomBox" onClick={() => joinRoom(r)}>
+              🪹 Room {r}
+            </div>
+          ))}
+
+          {waiting && (
+            <div className="subText" style={{ color: "#facc15" }}>
+              ⏳ Waiting for host approval...
+            </div>
+          )}
+
+          {rejected && (
+            <div className="subText" style={{ color: "#ef4444" }}>
+              ❌ Host rejected your request
+            </div>
+          )}
+
+          <div className="actionCard back" onClick={() => setScreen("home")}>
+            ← Back
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ---------------- CHAT ----------------
   return (
@@ -203,9 +260,28 @@ export default function App() {
         <div className="box">Received: {received}</div>
         <div className="box">Packet Loss: {lost}</div>
 
+        <div className="bar">
+          <div
+            className="fill"
+            style={{
+              width:
+                congestion === "LOW"
+                  ? "30%"
+                  : congestion === "MEDIUM"
+                  ? "60%"
+                  : "100%",
+              background:
+                congestion === "LOW"
+                  ? "#22c55e"
+                  : congestion === "MEDIUM"
+                  ? "#facc15"
+                  : "#ef4444",
+            }}
+          />
+        </div>
+
         <RTTGraph dataPoints={rttHistory} />
 
-        {/* EXISTING JOIN REQUESTS */}
         {joinRequests.length > 0 && (
           <div className="adminBox">
             <h4>Join Requests</h4>
@@ -214,37 +290,11 @@ export default function App() {
               <div key={i} className="requestCard">
                 <b>{r.name}</b>
                 <div className="reqBtns">
-                  <button onClick={() => approveUser(r.id, r.roomId)}>✔</button>
-                  <button onClick={() => rejectUser(r.id)}>✖</button>
+                  <button onClick={() => approveUser(r.id, r.roomId)} className="approve">✔</button>
+                  <button onClick={() => rejectUser(r.id)} className="reject">✖</button>
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* ✅ NEW ACTIVE USERS (ADDED, NOT REPLACED) */}
-        {roomUsers.length > 0 && (
-          <div className="adminBox">
-            <h4>Active Users</h4>
-
-            {roomUsers.map((u, i) => {
-              const isMe = u.name === name;
-
-              return (
-                <div key={i} className="requestCard">
-                  <b>
-                    {u.name} {isMe && "(You)"} {i === 0 && "👑"}
-                  </b>
-
-                  {!isMe && (
-                    <div className="reqBtns">
-                      <button onClick={() => kickUser(u.id)}>👢</button>
-                      <button onClick={() => banUser(u.id)}>🚫</button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
           </div>
         )}
       </div>
@@ -273,6 +323,7 @@ export default function App() {
           })}
         </div>
 
+        {/* ✅ SHOW SLOW MODE MESSAGE */}
         {isBlocked && (
           <div style={{ color: "#ef4444", padding: "5px" }}>
             ⚠ {slowMsg}
