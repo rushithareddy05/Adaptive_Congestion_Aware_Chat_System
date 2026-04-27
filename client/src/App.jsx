@@ -17,10 +17,14 @@ export default function App() {
   const [rtt, setRtt] = useState(0);
 
   const [waiting, setWaiting] = useState(false);
-  const [rejected, setRejected] = useState(false); // ✅ ADDED
+  const [rejected, setRejected] = useState(false);
 
   const [congestion, setCongestion] = useState("LOW");
   const [slowMode, setSlowMode] = useState(false);
+
+  // ✅ NEW STATES FOR REAL SLOW MODE
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [slowMsg, setSlowMsg] = useState("");
 
   const [sent, setSent] = useState(0);
   const [received, setReceived] = useState(0);
@@ -49,7 +53,6 @@ export default function App() {
       setScreen("chat");
     };
 
-    // ✅ ADDED REJECT HANDLER
     const handleRejected = () => {
       setWaiting(false);
       setRejected(true);
@@ -82,20 +85,35 @@ export default function App() {
       setMessages((p) => [...p, msg]);
     };
 
+    // ✅ NEW: HANDLE BACKEND SLOW MODE
+    const handleSlowMode = (data) => {
+      console.log("SLOW MODE:", data);
+
+      setIsBlocked(true);
+      setSlowMsg(data.message || "Slow mode active");
+
+      setTimeout(() => {
+        setIsBlocked(false);
+        setSlowMsg("");
+      }, 3000);
+    };
+
     socket.on("room-list", handleRoomList);
     socket.on("join-request", handleJoinRequest);
     socket.on("approved", handleApproved);
-    socket.on("rejected", handleRejected); // ✅ ADDED
+    socket.on("rejected", handleRejected);
     socket.on("receive-message", handleMessage);
     socket.on("system-message", handleSystem);
+    socket.on("slow-mode", handleSlowMode); // ✅ NEW
 
     return () => {
       socket.off("room-list", handleRoomList);
       socket.off("join-request", handleJoinRequest);
       socket.off("approved", handleApproved);
-      socket.off("rejected", handleRejected); // ✅ ADDED
+      socket.off("rejected", handleRejected);
       socket.off("receive-message", handleMessage);
       socket.off("system-message", handleSystem);
+      socket.off("slow-mode", handleSlowMode); // ✅ NEW
     };
   }, []);
 
@@ -111,7 +129,7 @@ export default function App() {
   // ---------------- JOIN ROOM ----------------
   const joinRoom = (id) => {
     setWaiting(true);
-    setRejected(false); // reset
+    setRejected(false);
 
     socket.emit("join-room", { roomId: id, name }, (res) => {
       if (res?.error) {
@@ -123,7 +141,7 @@ export default function App() {
 
   // ---------------- SEND MESSAGE ----------------
   const sendMessage = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isBlocked) return; // ✅ BLOCK WHEN SLOW MODE
 
     setSent((p) => p + 1);
 
@@ -172,7 +190,7 @@ export default function App() {
           />
 
           <div className="actionCard create" onClick={createRoom}>
-            <div className="icon">🚀</div>
+            <div className="icon">🔮</div>
             <div>
               <div className="title">Create Room</div>
               <div className="desc">Start new chat session</div>
@@ -180,7 +198,7 @@ export default function App() {
           </div>
 
           <div className="actionCard join" onClick={() => setScreen("join")}>
-            <div className="icon">📡</div>
+            <div className="icon">🏃‍♂️‍➡️</div>
             <div>
               <div className="title">Join Room</div>
               <div className="desc">Join existing room</div>
@@ -204,7 +222,7 @@ export default function App() {
 
           {rooms.map((r, i) => (
             <div key={i} className="roomBox" onClick={() => joinRoom(r)}>
-              🚪 Room {r}
+              🪹 Room {r}
             </div>
           ))}
 
@@ -305,13 +323,22 @@ export default function App() {
           })}
         </div>
 
+        {/* ✅ SHOW SLOW MODE MESSAGE */}
+        {isBlocked && (
+          <div style={{ color: "#ef4444", padding: "5px" }}>
+            ⚠ {slowMsg}
+          </div>
+        )}
+
         <div className="input">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type a message..."
           />
-          <button onClick={sendMessage}>Send</button>
+          <button onClick={sendMessage} disabled={isBlocked}>
+            {isBlocked ? "Slow..." : "Send"}
+          </button>
         </div>
       </div>
     </div>
