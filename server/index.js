@@ -28,15 +28,15 @@ const getCongestion = (rtt) => {
   return "HIGH";
 };
 
-// ---------------- CLEANUP ----------------
-const cleanupRoom = (roomId) => {
-  const room = rooms[roomId];
-  if (!room) return;
+// ✅ ALWAYS RETURN ACTIVE ROOMS ONLY
+const getActiveRooms = () =>
+  Object.entries(rooms)
+    .filter(([_, room]) => room.users.length > 0)
+    .map(([id]) => id);
 
-  if (room.users.length === 0) {
-    delete rooms[roomId];
-    io.emit("room-list", Object.keys(rooms));
-  }
+// ✅ SAFE EMIT
+const broadcastRooms = () => {
+  io.emit("room-list", getActiveRooms());
 };
 
 // ---------------- SOCKET ----------------
@@ -44,16 +44,12 @@ io.on("connection", (socket) => {
 
   console.log("Connected:", socket.id);
 
-  // GET ROOMS
+  // ---------------- GET ROOMS ----------------
   socket.on("get-rooms", () => {
-    const activeRooms = Object.entries(rooms)
-      .filter(([_, room]) => room.users.length > 0)
-      .map(([id]) => id);
-
-    socket.emit("room-list", activeRooms);
+    socket.emit("room-list", getActiveRooms());
   });
 
-  // CREATE ROOM
+  // ---------------- CREATE ROOM ----------------
   socket.on("create-room", ({ name }, cb) => {
 
     const roomId = generateRoomId();
@@ -71,7 +67,7 @@ io.on("connection", (socket) => {
 
     cb?.({ roomId });
 
-    io.emit("room-list", Object.keys(rooms));
+    broadcastRooms();
 
     io.to(roomId).emit("system-message", {
       name: "system",
@@ -79,7 +75,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  // JOIN ROOM
+  // ---------------- JOIN ROOM ----------------
   socket.on("join-room", ({ roomId, name }, cb) => {
 
     const room = rooms[roomId];
@@ -98,7 +94,7 @@ io.on("connection", (socket) => {
     cb?.({ status: "pending" });
   });
 
-  // APPROVE USER
+  // ---------------- APPROVE USER ----------------
   socket.on("approve-user", ({ roomId, userId }) => {
 
     const room = rooms[roomId];
@@ -131,39 +127,30 @@ io.on("connection", (socket) => {
       });
     }
 
-    io.emit("room-list", Object.keys(rooms));
+    broadcastRooms();
   });
 
-  // ---------------- FIXED REJECT USER ----------------
+  // ---------------- REJECT USER ----------------
   socket.on("reject-user", ({ userId }) => {
 
     const room = Object.values(rooms).find(r =>
       r.requests.some(u => u.id === userId)
     );
 
-    const client = io.sockets.sockets.get(userId);
-
     if (room) {
       room.requests = room.requests.filter(u => u.id !== userId);
     }
 
+    const client = io.sockets.sockets.get(userId);
+
     if (client) {
-      // ✅ IMPORTANT FIX: frontend listens to "rejected"
       client.emit("rejected", {
         message: "Host rejected your request"
       });
-
-      // optional system message (for host room log)
-      if (room) {
-        io.to(room.host).emit("system-message", {
-          name: "system",
-          text: `${users[userId]?.name || "User"} was rejected ❌`
-        });
-      }
     }
   });
 
-  // MESSAGE
+  // ---------------- SEND MESSAGE ----------------
   socket.on("send-message", ({ roomId, text, name }) => {
 
     const room = rooms[roomId];
@@ -183,18 +170,46 @@ io.on("connection", (socket) => {
     });
   });
 
-  // DISCONNECT
+  // ---------------- DISCONNECT ----------------
   socket.on("disconnect", () => {
 
     const user = users[socket.id];
+    if (!user) return;
 
-    if (user?.roomId && rooms[user.roomId]) {
+    const { roomId } = user;
+    const room = rooms[roomId];
 
-      const room = rooms[user.roomId];
+    if (room) {
 
-      room.users = room.users.filter(u => u.id !== socket.id);
+      // ✅ IF HOST LEAVES → DELETE ROOM
+      if (room.host === socket.id) {
 
-      cleanupRoom(user.roomId);
+        // notify users before deletion
+        io.to(roomId).emit("system-message", {
+          name: "system",
+          text: "Host left. Room closed ❌"
+        });
+
+        delete rooms[roomId];
+        broadcastRooms();
+
+      } else {
+
+        // remove user normally
+        room.users = room.users.filter(u => u.id !== socket.id);
+
+        io.to(roomId).emit("system-message", {
+          name: "system",
+          text: `${user.name} left`
+        });
+
+        // delete if empty
+        if (room.users.length === 0) {
+          delete rooms[roomId];
+        }
+
+        broadcastRooms();
+      }
     }
 
     delete users[socket.id];
