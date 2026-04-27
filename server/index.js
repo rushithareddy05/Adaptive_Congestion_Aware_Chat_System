@@ -15,6 +15,7 @@ const io = new Server(server, {
 // ---------------- DATA ----------------
 const rooms = {};
 const users = {};
+const messageCooldowns = {}; // ✅ NEW
 
 // ---------------- HELPERS ----------------
 const generateRoomId = () =>
@@ -28,13 +29,11 @@ const getCongestion = (rtt) => {
   return "HIGH";
 };
 
-// ✅ ALWAYS RETURN ACTIVE ROOMS ONLY
 const getActiveRooms = () =>
   Object.entries(rooms)
     .filter(([_, room]) => room.users.length > 0)
     .map(([id]) => id);
 
-// ✅ SAFE EMIT
 const broadcastRooms = () => {
   io.emit("room-list", getActiveRooms());
 };
@@ -71,7 +70,7 @@ io.on("connection", (socket) => {
 
     io.to(roomId).emit("system-message", {
       name: "system",
-      text: `${name} created the room 👑`
+      text: `${name} created the Room 👑`
     });
   });
 
@@ -145,12 +144,12 @@ io.on("connection", (socket) => {
 
     if (client) {
       client.emit("rejected", {
-        message: "Host rejected your request"
+        message: "Host Rejected Your Request."
       });
     }
   });
 
-  // ---------------- SEND MESSAGE ----------------
+  // ---------------- SEND MESSAGE (WITH SLOW MODE) ----------------
   socket.on("send-message", ({ roomId, text, name }) => {
 
     const room = rooms[roomId];
@@ -162,6 +161,32 @@ io.on("connection", (socket) => {
     const rtt = getRTT();
     const congestion = getCongestion(rtt);
 
+    const now = Date.now();
+    const cooldown = messageCooldowns[socket.id] || 0;
+
+    // ⛔ Block if user is in cooldown
+    if (now < cooldown) {
+      return socket.emit("slow-mode", {
+        message: "⚠ Slow mode active! Please wait..."
+      });
+    }
+
+    // 🔥 Dynamic delay
+    let delay = 0;
+    if (congestion === "MEDIUM") delay = 1000;
+    if (congestion === "HIGH") delay = 3000;
+
+    // 🚨 Force visible slow mode (for demo)
+    if (congestion === "HIGH") {
+      socket.emit("slow-mode", {
+        message: "🚨 High congestion detected! Slow mode ON"
+      });
+    }
+
+    // ⏱️ Apply cooldown
+    messageCooldowns[socket.id] = now + delay;
+
+    // 📡 Send message
     io.to(roomId).emit("receive-message", {
       name,
       text,
@@ -181,10 +206,8 @@ io.on("connection", (socket) => {
 
     if (room) {
 
-      // ✅ IF HOST LEAVES → DELETE ROOM
       if (room.host === socket.id) {
 
-        // notify users before deletion
         io.to(roomId).emit("system-message", {
           name: "system",
           text: "Host left. Room closed ❌"
@@ -195,7 +218,6 @@ io.on("connection", (socket) => {
 
       } else {
 
-        // remove user normally
         room.users = room.users.filter(u => u.id !== socket.id);
 
         io.to(roomId).emit("system-message", {
@@ -203,7 +225,6 @@ io.on("connection", (socket) => {
           text: `${user.name} left`
         });
 
-        // delete if empty
         if (room.users.length === 0) {
           delete rooms[roomId];
         }
@@ -213,6 +234,7 @@ io.on("connection", (socket) => {
     }
 
     delete users[socket.id];
+    delete messageCooldowns[socket.id]; // ✅ CLEANUP
 
     console.log("Disconnected:", socket.id);
   });
