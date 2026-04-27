@@ -15,7 +15,7 @@ const io = new Server(server, {
 // ---------------- DATA ----------------
 const rooms = {};
 const users = {};
-const messageCooldowns = {}; // ✅ NEW
+const messageCooldowns = {};
 
 // ---------------- HELPERS ----------------
 const generateRoomId = () =>
@@ -57,7 +57,8 @@ io.on("connection", (socket) => {
       host: socket.id,
       hostName: name,
       users: [{ id: socket.id, name }],
-      requests: []
+      requests: [],
+      banned: [] // ✅ NEW
     };
 
     users[socket.id] = { name, roomId };
@@ -72,6 +73,9 @@ io.on("connection", (socket) => {
       name: "system",
       text: `${name} created the Room 👑`
     });
+
+    // ✅ send active users
+    io.to(roomId).emit("room-users", rooms[roomId].users);
   });
 
   // ---------------- JOIN ROOM ----------------
@@ -79,6 +83,11 @@ io.on("connection", (socket) => {
 
     const room = rooms[roomId];
     if (!room) return cb?.({ error: "Room not found" });
+
+    // ✅ BLOCK BANNED USERS
+    if (room.banned.includes(socket.id)) {
+      return cb?.({ error: "You are banned from this room" });
+    }
 
     room.requests.push({ id: socket.id, name });
 
@@ -127,6 +136,9 @@ io.on("connection", (socket) => {
     }
 
     broadcastRooms();
+
+    // ✅ update users
+    io.to(roomId).emit("room-users", room.users);
   });
 
   // ---------------- REJECT USER ----------------
@@ -149,7 +161,70 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ---------------- SEND MESSAGE (WITH SLOW MODE) ----------------
+  // ---------------- KICK USER ----------------
+  socket.on("kick-user", ({ roomId, userId }) => {
+
+    const room = rooms[roomId];
+    if (!room) return;
+
+    if (room.host !== socket.id) return;
+
+    room.users = room.users.filter(u => u.id !== userId);
+
+    const client = io.sockets.sockets.get(userId);
+
+    if (client) {
+      client.leave(roomId);
+      client.emit("kicked", {
+        message: "👢 You were removed by host"
+      });
+    }
+
+    io.to(roomId).emit("system-message", {
+      name: "system",
+      text: "A user was kicked 👢"
+    });
+
+    io.to(roomId).emit("room-users", room.users);
+  });
+
+  // ---------------- BAN USER ----------------
+  socket.on("ban-user", ({ roomId, userId }) => {
+
+    const room = rooms[roomId];
+    if (!room) return;
+
+    if (room.host !== socket.id) return;
+
+    // remove from active users
+    room.users = room.users.filter(u => u.id !== userId);
+
+    // remove from requests
+    room.requests = room.requests.filter(u => u.id !== userId);
+
+    // add to banned list
+    if (!room.banned.includes(userId)) {
+      room.banned.push(userId);
+    }
+
+    const client = io.sockets.sockets.get(userId);
+
+    if (client) {
+      client.leave(roomId);
+      client.emit("banned", {
+        message: "🚫 You are banned from this room"
+      });
+    }
+
+    io.to(roomId).emit("system-message", {
+      name: "system",
+      text: "A user was banned 🚫"
+    });
+
+    io.to(roomId).emit("room-users", room.users);
+  });
+
+  // ---------------- SEND MESSAGE ----------------
   socket.on("send-message", ({ roomId, text, name }) => {
 
     const room = rooms[roomId];
@@ -164,29 +239,24 @@ io.on("connection", (socket) => {
     const now = Date.now();
     const cooldown = messageCooldowns[socket.id] || 0;
 
-    // ⛔ Block if user is in cooldown
     if (now < cooldown) {
       return socket.emit("slow-mode", {
         message: "⚠ Slow mode active! Please wait..."
       });
     }
 
-    // 🔥 Dynamic delay
     let delay = 0;
     if (congestion === "MEDIUM") delay = 1000;
     if (congestion === "HIGH") delay = 3000;
 
-    // 🚨 Force visible slow mode (for demo)
     if (congestion === "HIGH") {
       socket.emit("slow-mode", {
         message: "🚨 High congestion detected! Slow mode ON"
       });
     }
 
-    // ⏱️ Apply cooldown
     messageCooldowns[socket.id] = now + delay;
 
-    // 📡 Send message
     io.to(roomId).emit("receive-message", {
       name,
       text,
@@ -225,6 +295,8 @@ io.on("connection", (socket) => {
           text: `${user.name} left`
         });
 
+        io.to(roomId).emit("room-users", room.users);
+
         if (room.users.length === 0) {
           delete rooms[roomId];
         }
@@ -234,7 +306,7 @@ io.on("connection", (socket) => {
     }
 
     delete users[socket.id];
-    delete messageCooldowns[socket.id]; // ✅ CLEANUP
+    delete messageCooldowns[socket.id];
 
     console.log("Disconnected:", socket.id);
   });
